@@ -77,5 +77,4 @@ LEFT JOIN conversion_values_source USING(date, ad_id)
 where date >= (select max(date)-7 from {{ this }})
 
 {% endif %}
-ORDER BY date desc
 
