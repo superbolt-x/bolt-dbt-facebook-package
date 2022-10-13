@@ -1,0 +1,60 @@
+version: 2
+
+sources:
+  - name: facebook_raw
+    schema: facebook_raw
+    tables:
+      - name: ads
+        identifier: ad_history
+        columns: 
+          - name: id
+            tests:
+              - not_null
+              - unique
+        
+      - name: ads__labels
+        identifier: label_history
+      - name: ads__previews
+        identifier: facebook_adpreview
+
+      - name: ads_insights
+        identifier: ads_insights
+      
+        freshness: 
+          warn_after: {count: 24, period: hour}
+
+        loaded_at_field: _fivetran_synced
+
+      - name: ads_insights__actions
+        identifier: ads_insights_actions
+      - name: ads_insights__action_values
+        identifier: ads_insights_action_values
+      - name: ads_insights__conversions
+        identifier: ads_insights_conversions
+      - name: ads_insights__conversion_values
+        identifier: ads_insights_conversion_values
+
+
+      - name: adsets
+        identifier: ad_set_history
+        columns: 
+          - name: id
+            tests:
+              - not_null
+              - unique
+              
+      - name: campaigns
+        identifier: campaign_history
+        columns: 
+          - name: id
+            tests:
+              - not_null
+              - unique
+
+models:
+  - name: ads_insights 
+    columns:
+      - name: unique_key
+        tests: 
+          - unique
+          - not_null
