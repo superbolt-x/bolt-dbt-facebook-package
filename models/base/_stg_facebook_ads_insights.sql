@@ -14,7 +14,7 @@ with insights_source as (
 
     actions_source as (
 
-    {{ get_ads_insights__child_source('actions') }}
+    {{ get_facebook_ads_insights__child_source('actions') }}
 
     )
     
@@ -24,7 +24,7 @@ with insights_source as (
     {%- else %}
     ,conversions_source as (
 
-    {{ get_ads_insights__child_source('conversions') }}
+    {{ get_facebook_ads_insights__child_source('conversions') }}
 
     )
     {%- endif %}
@@ -35,7 +35,7 @@ with insights_source as (
     {%- else %}
     ,action_values_source as (
 
-    {{ get_ads_insights__child_source('action_values') }}
+    {{ get_facebook_ads_insights__child_source('action_values') }}
 
     )
     {%- endif %}
@@ -46,7 +46,7 @@ with insights_source as (
     {%- else %}
     ,conversion_values_source as (
 
-    {{ get_ads_insights__child_source('conversion_values') }}
+    {{ get_facebook_ads_insights__child_source('conversion_values') }}
 
     )
     {%- endif %}
@@ -77,5 +77,4 @@ LEFT JOIN conversion_values_source USING(date, ad_id)
 where date >= (select max(date)-7 from {{ this }})
 
 {% endif %}
-ORDER BY date desc
 

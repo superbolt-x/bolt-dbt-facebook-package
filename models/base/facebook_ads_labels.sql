@@ -8,7 +8,7 @@
 SELECT
  
     {% for field in selected_fields -%}
-    {{ get_clean_field(table_name, field) }}
+    {{ get_facebook_clean_field(table_name, field) }}
     {%- if not loop.last %},{%- endif %}
     {% endfor %}
 

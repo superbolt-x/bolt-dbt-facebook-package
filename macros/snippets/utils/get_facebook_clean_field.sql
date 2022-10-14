@@ -1,4 +1,4 @@
-{%- macro get_clean_field(table_name, metric_name) %}
+{%- macro get_facebook_clean_field(table_name, metric_name) %}
     
     {#- /* Apply to specific table */ -#}
     {%- if '_insights__' in table_name -%}

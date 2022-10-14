@@ -1,21 +1,17 @@
 {%- set selected_fields = [
     "id",
     "name",
-    "billing_event",
-    "bid_strategy",
-    "daily_budget",
     "effective_status",
-    "optimization_goal",
     "account_id",
     "updated_time"
 ] -%}
-{%- set schema_name, table_name = 'facebook_raw', 'adsets' -%}
+{%- set schema_name, table_name = 'facebook_raw', 'ads' -%}
 
 WITH staging AS 
     (SELECT
     
         {% for field in selected_fields -%}
-        {{ get_clean_field(table_name, field) }},
+        {{ get_facebook_clean_field(table_name, field) }},
         {% endfor -%}
         updated_time,
         MAX(updated_time) OVER (PARTITION BY id) as last_updated_time

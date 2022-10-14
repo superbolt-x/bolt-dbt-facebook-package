@@ -39,7 +39,7 @@
 ]
 -%}
 
-{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_ads_insights'))
+{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_ads_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
                     -%}  
@@ -66,7 +66,7 @@ WITH
         {%- endif -%}
         {%- if not loop.last %},{%- endif %}
         {%- endfor %}
-    FROM {{ ref('_stg_ads_insights') }}
+    FROM {{ ref('_stg_facebook_ads_insights') }}
     {%- if var('currency') != 'USD' %}
     LEFT JOIN currency USING(date)
     {%- endif %}
@@ -74,17 +74,17 @@ WITH
 
     ads AS 
     (SELECT account_id, ad_id::varchar as ad_id, ad_effective_status
-    FROM {{ ref('ads') }}
+    FROM {{ ref('facebook_ads') }}
     ),
 
     adsets AS 
     (SELECT account_id, adset_id, adset_effective_status
-    FROM {{ ref('adsets') }}
+    FROM {{ ref('facebook_adsets') }}
     ),
 
     campaigns AS 
     (SELECT account_id, campaign_id, campaign_effective_status
-    FROM {{ ref('campaigns') }}
+    FROM {{ ref('facebook_campaigns') }}
     )
 
 SELECT *

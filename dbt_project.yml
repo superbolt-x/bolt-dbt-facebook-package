@@ -34,7 +34,7 @@ models:
   bolt_dbt_facebook_package:
     # Config indicated by + and applies to all files under models/example/
     base:
-      +schema: base
+      +schema: facebook_base
       +materialized: table
 
       ads_previews:

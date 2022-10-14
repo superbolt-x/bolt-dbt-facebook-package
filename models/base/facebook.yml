@@ -8,9 +8,6 @@ sources:
         identifier: ad_history
         columns: 
           - name: id
-            tests:
-              - not_null
-              - unique
         
       - name: ads__labels
         identifier: label_history
@@ -37,22 +34,12 @@ sources:
 
       - name: adsets
         identifier: ad_set_history
-        columns: 
-          - name: id
-            tests:
-              - not_null
-              - unique
               
       - name: campaigns
         identifier: campaign_history
-        columns: 
-          - name: id
-            tests:
-              - not_null
-              - unique
 
 models:
-  - name: ads_insights 
+  - name: facebook_ads_insights 
     columns:
       - name: unique_key
         tests: 

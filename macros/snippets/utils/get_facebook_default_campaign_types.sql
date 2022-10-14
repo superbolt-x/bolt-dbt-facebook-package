@@ -1,4 +1,4 @@
-{%- macro get_default_campaign_types(campaign_name) -%}
+{%- macro get_facebook_default_campaign_types(campaign_name) -%}
 
  CASE 
     WHEN {{ campaign_name }} ~* 'prospecting' THEN 'Campaign Type: Prospecting'

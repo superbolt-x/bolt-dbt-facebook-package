@@ -1,4 +1,4 @@
-{%- macro get_ads_insights__child_source(table_name) -%}
+{%- macro get_facebook_ads_insights__child_source(table_name) -%}
 
 
 {%- set action_types = dbt_utils.get_column_values(source('facebook_raw','ads_insights__'~table_name),'action_type') -%}
