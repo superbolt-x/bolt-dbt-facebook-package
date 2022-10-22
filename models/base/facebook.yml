@@ -30,13 +30,12 @@ sources:
         identifier: ads_insights_conversions
       - name: ads_insights__conversion_values
         identifier: ads_insights_conversion_values
-
-
       - name: adsets
-        identifier: ad_set_history
-              
+        identifier: ad_set_history          
       - name: campaigns
         identifier: campaign_history
+      - name: accounts
+        identifier: account_history
 
 models:
   - name: facebook_ads_insights 

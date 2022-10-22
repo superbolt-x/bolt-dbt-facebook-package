@@ -7,6 +7,11 @@
 {%- set exclude_fields = [
     "_fivetran_id",
     "_fivetran_synced",
+    "account_name",
+    "account_currency",
+    "campaign_name",
+    "adset_name",
+    "ad_name",
     "inline_link_clicks",
     "offsite_conversion.fb_pixel_add_payment_info",
     "add_payment_info",
@@ -65,26 +70,9 @@ WITH
     {%- if var('currency') != 'USD' %}
     LEFT JOIN currency USING(date)
     {%- endif %}
-    ),
-
-    ads AS 
-    (SELECT account_id, ad_id::varchar as ad_id, ad_effective_status
-    FROM {{ ref('facebook_ads') }}
-    ),
-
-    adsets AS 
-    (SELECT account_id, adset_id, adset_effective_status
-    FROM {{ ref('facebook_adsets') }}
-    ),
-
-    campaigns AS 
-    (SELECT account_id, campaign_id, campaign_effective_status
-    FROM {{ ref('facebook_campaigns') }}
     )
 
-SELECT *
+SELECT *,
+    {{ get_date_parts('date') }}
 FROM insights 
-LEFT JOIN ads USING(account_id, ad_id)
-LEFT JOIN adsets USING(account_id, adset_id)
-LEFT JOIN campaigns USING(account_id, campaign_id)
 
