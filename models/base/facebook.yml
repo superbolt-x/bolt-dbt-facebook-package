@@ -38,6 +38,30 @@ sources:
         identifier: account_history
 
 models:
+  - name: facebook_ads
+    columns:
+      - name: unique_key
+        tests: 
+          - unique
+          - not_null
+  - name: facebook_adsets
+    columns:
+      - name: unique_key
+        tests: 
+          - unique
+          - not_null
+  - name: facebook_campaigns
+    columns:
+      - name: unique_key
+        tests: 
+          - unique
+          - not_null
+  - name: facebook_accounts
+    columns:
+      - name: unique_key
+        tests: 
+          - unique
+          - not_null
   - name: facebook_ads_insights 
     columns:
       - name: unique_key

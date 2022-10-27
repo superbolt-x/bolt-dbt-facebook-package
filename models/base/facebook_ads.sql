@@ -18,6 +18,7 @@ WITH staging AS
     FROM {{ source(schema_name, table_name) }}
     )
 
-SELECT *
+SELECT *,
+    ad_id as unique_key
 FROM staging 
 WHERE updated_time = last_updated_time

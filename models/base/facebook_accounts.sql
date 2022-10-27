@@ -17,6 +17,7 @@ WITH staging AS
     FROM {{ source(schema_name, table_name) }}
     )
 
-SELECT *
+SELECT *,
+    account_id as unique_key
 FROM staging 
 WHERE _fivetran_synced = last_updated_time
