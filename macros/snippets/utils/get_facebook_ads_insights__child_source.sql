@@ -1,7 +1,7 @@
 {%- macro get_facebook_ads_insights__child_source(table_name) -%}
 
 
-{%- set action_types = dbt_utils.get_column_values(source('facebook_raw','ads_insights__'~table_name),'action_type') -%}
+{%- set action_types = dbt_utils.get_column_values(source('facebook_raw','ads_insights_'~table_name),'action_type') -%}
 {%- set attributions = ['_1_d_view','_7_d_click'] -%}
 
 SELECT 
@@ -34,7 +34,7 @@ SELECT
 
 {% endfor %}
 
-    FROM {{ source('facebook_raw','ads_insights__'~table_name) }}
+    FROM {{ source('facebook_raw','ads_insights_'~table_name) }}
 
     GROUP BY 1,2
 
