@@ -1,3 +1,9 @@
+{{ config( 
+        materialized='incremental',
+        unique_key='unique_key',
+        on_schema_change='append_new_columns'
+) }}
+
 {%- set currency_fields = [
     "spend",
     "revenue"
@@ -70,9 +76,17 @@ WITH
     {%- if var('currency') != 'USD' %}
     LEFT JOIN currency USING(date)
     {%- endif %}
+    {% if is_incremental() -%}
+
+    -- this filter will only be applied on an incremental run
+    WHERE date >= (select max(date)-7 from {{ this }})
+
+    {% endif %}
+
     )
 
 SELECT *,
-    {{ get_date_parts('date') }}
+    {{ get_date_parts('date') }},
+    ad_id||'_'||date as unique_key
 FROM insights 
 

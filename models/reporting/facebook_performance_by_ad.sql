@@ -1,5 +1,9 @@
 {{ config (
-    alias = target.database + '_facebook_performance_by_ad'
+    alias = target.database + '_facebook_performance_by_ad',
+    materialized='incremental',
+    unique_key='unique_key',
+    on_schema_change='append_new_columns'
+
 )}}
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
@@ -27,6 +31,12 @@ WITH
         {%- if not loop.last %},{%- endif %}
         {% endfor %}
     FROM {{ ref('facebook_ads_insights') }}
+    {% if is_incremental() -%}
+
+    -- this filter will only be applied on an incremental run
+    WHERE date >= (select max(date)-7 from {{ this }})
+
+    {% endif %}
     GROUP BY {{ range(1, dimensions|length +2 +1)|list|join(',') }}),
     {%- endfor %}
 
@@ -52,7 +62,8 @@ WITH
 
 SELECT *,
     {{ get_facebook_default_campaign_types('campaign_name')}},
-    {{ get_facebook_scoring_objects() }}
+    {{ get_facebook_scoring_objects() }},
+    date||'_'||date_granularity||'_'||campaign_name||'_'||adset_name||'_'||ad_name as unique_key
 FROM 
     ({% for date_granularity in date_granularity_list -%}
     SELECT *
