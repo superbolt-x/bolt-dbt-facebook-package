@@ -22,13 +22,13 @@ sources:
 
         loaded_at_field: _fivetran_synced
 
-      - name: ads_insights__actions
+      - name: ads_insights_actions
         identifier: ads_insights_actions
-      - name: ads_insights__action_values
+      - name: ads_insights_action_values
         identifier: ads_insights_action_values
-      - name: ads_insights__conversions
+      - name: ads_insights_conversions
         identifier: ads_insights_conversions
-      - name: ads_insights__conversion_values
+      - name: ads_insights_conversion_values
         identifier: ads_insights_conversion_values
       - name: adsets
         identifier: ad_set_history          

@@ -19,7 +19,7 @@ with insights_source as (
 
     )
     
-    {%- set conversions_table_exists = check_source_exists('facebook_raw','ads_insights__conversions') %}
+    {%- set conversions_table_exists = check_source_exists('facebook_raw','ads_insights_conversions') %}
     {%- if not conversions_table_exists %}
 
     {%- else %}
@@ -30,7 +30,7 @@ with insights_source as (
     )
     {%- endif %}
     
-    {%- set action_values_table_exists = check_source_exists('facebook_raw','ads_insights__action_values') %}
+    {%- set action_values_table_exists = check_source_exists('facebook_raw','ads_insights_action_values') %}
     {%- if not action_values_table_exists %}
 
     {%- else %}
@@ -41,7 +41,7 @@ with insights_source as (
     )
     {%- endif %}
 
-    {%- set conversion_values_table_exists = check_source_exists('facebook_raw','ads_insights__conversion_values') %}
+    {%- set conversion_values_table_exists = check_source_exists('facebook_raw','ads_insights_conversion_values') %}
     {%- if not conversion_values_table_exists %}
 
     {%- else %}
