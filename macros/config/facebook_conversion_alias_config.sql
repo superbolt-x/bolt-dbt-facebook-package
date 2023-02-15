@@ -14,6 +14,7 @@
     {"original_name": 'initiate_checkout', "alias": 'web_initiate_checkout'},
     {"original_name": 'offsite_conversion.fb_pixel_initiate_checkout', "alias": 'initiate_checkout'},
     {"original_name": 'onsite_conversion.lead_grouped', "alias": 'onfacebook_leads'},
+    {"original_name": 'onsite_conversion.post_save', "alias": 'post_save'},
     {"original_name": 'offsite_conversion.fb_pixel_lead', "alias": 'website_leads'}
 
     )-%}
