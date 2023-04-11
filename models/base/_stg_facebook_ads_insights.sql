@@ -1,7 +1,7 @@
 {{ config( 
         materialized='incremental',
         unique_key='unique_key',
-        on_schema_change='append_new_columns'
+        on_schema_change='ignore'
 ) }}
 
 {%- set schema_name, table_name = 'facebook_raw', 'ads_insights' -%}
