@@ -93,6 +93,7 @@ where date >= (select max(date)-7 from {{ this }})
 
 select
     null::varchar as ad_id,
+    null::varchar as age,
     null::date as date,
     null::varchar as _fivetran_id
 
