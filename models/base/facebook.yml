@@ -24,8 +24,7 @@ sources:
         
         - name: ads_insights_age
         identifier: ads_insights_age
-      
-        freshness: null
+   
 
       - name: ads_insights_actions
         identifier: ads_insights_actions
