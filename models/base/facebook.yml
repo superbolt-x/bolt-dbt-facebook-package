@@ -22,10 +22,8 @@ sources:
 
         loaded_at_field: _fivetran_synced
         
-        - name: ads_insights_age
+      - name: ads_insights_age
         identifier: ads_insights_age
-   
-
       - name: ads_insights_actions
         identifier: ads_insights_actions
       - name: ads_insights_action_values
