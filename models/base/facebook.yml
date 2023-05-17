@@ -21,6 +21,11 @@ sources:
           warn_after: {count: 24, period: hour}
 
         loaded_at_field: _fivetran_synced
+        
+        - name: ads_insights_age
+        identifier: ads_insights_age
+      
+        freshness: null
 
       - name: ads_insights_actions
         identifier: ads_insights_actions
@@ -30,6 +35,14 @@ sources:
         identifier: ads_insights_conversions
       - name: ads_insights_conversion_values
         identifier: ads_insights_conversion_values
+      - name: ads_insights_age_actions
+        identifier: ads_insights_age_actions
+      - name: ads_insights_age_action_values
+        identifier: ads_insights_age_action_values
+      - name: ads_insights_age_conversions
+        identifier: ads_insights_age_conversions
+      - name: ads_insights_age_conversion_values
+        identifier: ads_insights_age_conversion_values
       - name: adsets
         identifier: ad_set_history          
       - name: campaigns
