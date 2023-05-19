@@ -67,18 +67,18 @@ SELECT
     ad_id||'_'||date||'_'||age as unique_key
 
 FROM insights_source 
-LEFT JOIN actions_source USING(date, ad_id)
+LEFT JOIN actions_source USING(date, ad_id, _fivetran_id)
 {%- if not conversions_table_exists %}
 {%- else %}
-LEFT JOIN conversions_source USING(date, ad_id)
+LEFT JOIN conversions_source USING(date, ad_id, _fivetran_id)
 {%- endif %}
 {%- if not action_values_table_exists %}
 {%- else %}
-LEFT JOIN action_values_source USING(date, ad_id)
+LEFT JOIN action_values_source USING(date, ad_id, _fivetran_id)
 {%- endif %}
 {%- if not conversion_values_table_exists %}
 {%- else %}
-LEFT JOIN conversion_values_source USING(date, ad_id)
+LEFT JOIN conversion_values_source USING(date, ad_id, _fivetran_id)
 {%- endif %}
 
 {% if is_incremental() -%}
