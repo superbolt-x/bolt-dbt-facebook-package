@@ -24,7 +24,7 @@ with insights_source as (
 
     actions_source as (
 
-    {{ get_facebook_ads_insights__child_source('age_actions') }}
+    {{ get_facebook_ads_insights_age__child_source('age_actions') }}
 
     )
     
@@ -34,7 +34,7 @@ with insights_source as (
     {%- else %}
     ,conversions_source as (
 
-    {{ get_facebook_ads_insights__child_source('age_conversions') }}
+    {{ get_facebook_ads_insights_age__child_source('age_conversions') }}
 
     )
     {%- endif %}
@@ -45,7 +45,7 @@ with insights_source as (
     {%- else %}
     ,action_values_source as (
 
-    {{ get_facebook_ads_insights__child_source('age_action_values') }}
+    {{ get_facebook_ads_insights_age__child_source('age_action_values') }}
 
     )
     {%- endif %}
@@ -56,7 +56,7 @@ with insights_source as (
     {%- else %}
     ,conversion_values_source as (
 
-    {{ get_facebook_ads_insights__child_source('age_conversion_values') }}
+    {{ get_facebook_ads_insights_age__child_source('age_conversion_values') }}
 
     )
     {%- endif %}
