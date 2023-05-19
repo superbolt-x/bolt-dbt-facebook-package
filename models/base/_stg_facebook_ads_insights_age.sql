@@ -64,7 +64,7 @@ with insights_source as (
 SELECT 
     *,
     MAX(_fivetran_synced) over (PARTITION BY account_name) as last_updated,
-    ad_id||'_'||date as unique_key
+    ad_id||'_'||date||'_'||age as unique_key
 
 FROM insights_source 
 LEFT JOIN actions_source USING(date, ad_id)
