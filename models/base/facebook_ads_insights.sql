@@ -13,8 +13,6 @@
     "adset_name",
     "ad_name",
     "inline_link_clicks",
-    "offsite_conversion.fb_pixel_add_payment_info",
-    "add_payment_info",
     "landing_page_view",
     "offsite_conversion.fb_pixel_view_content",
     "view_content",
