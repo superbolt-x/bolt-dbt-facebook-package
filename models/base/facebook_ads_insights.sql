@@ -13,7 +13,6 @@
     "adset_name",
     "ad_name",
     "inline_link_clicks",
-    "landing_page_view",
     "offsite_conversion.fb_pixel_view_content",
     "view_content",
     "omni_view_content",
