@@ -40,6 +40,16 @@ sources:
         identifier: ads_insights_age_conversions
       - name: ads_insights_age_conversion_values
         identifier: ads_insights_age_conversion_values
+      - name: ads_insights_region
+        identifier: ads_insights_region
+      - name: ads_insights_age_actions
+        identifier: ads_insights_age_actions
+      - name: ads_insights_age_action_values
+        identifier: ads_insights_age_action_values
+      - name: ads_insights_age_conversions
+        identifier: ads_insights_age_conversions
+      - name: ads_insights_age_conversion_values
+        identifier: ads_insights_age_conversion_values  
       - name: adsets
         identifier: ad_set_history          
       - name: campaigns
