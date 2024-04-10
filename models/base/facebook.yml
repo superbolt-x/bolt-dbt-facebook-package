@@ -1,6 +1,14 @@
 version: 2
 
 sources:
+  - name: gsheet_raw
+    schema: gsheet_raw
+    tables:
+      - name: catalog_segment_actions
+        identifier: catalog_segment_actions
+      - name: catalog_segment_value
+        identifier: catalog_segment_value
+        
   - name: facebook_raw
     schema: facebook_raw
     tables:
