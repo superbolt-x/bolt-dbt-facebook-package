@@ -5,9 +5,9 @@ sources:
     schema: gsheet_raw
     tables:
       - name: ads_insights_catalog_segment_actions
-        identifier: catalog_segment_actions
+        identifier: ads_insights_catalog_segment_actions
       - name: ads_insights_catalog_segment_value
-        identifier: catalog_segment_value
+        identifier: ads_insights_catalog_segment_value
         
   - name: facebook_raw
     schema: facebook_raw
