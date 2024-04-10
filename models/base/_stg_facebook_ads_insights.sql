@@ -52,6 +52,30 @@ with insights_source as (
     )
     {%- endif %}
 
+        
+    {%- set segment_actions_table_exists = check_source_exists('gsheet_raw','ads_insights_catalog_segment_actions') %}
+    {%- if not segment_actions_table_exists %}
+
+    {%- else %}
+    ,segment_actions_source as (
+
+    {{ get_facebook_ads_insights__segment_source('catalog_segment_actions') }}
+
+    )
+    {%- endif %}
+
+        
+    {%- set segment_value_table_exists = check_source_exists('gsheet_raw','ads_insights_catalog_segment_value') %}
+    {%- if not segment_value_table_exists %}
+
+    {%- else %}
+    ,segment_value_source as (
+
+    {{ get_facebook_ads_insights__segment_source('catalog_segment_value') }}
+
+    )
+    {%- endif %}
+        
 SELECT 
     *,
     MAX(_fivetran_synced) over (PARTITION BY account_name) as last_updated,
@@ -68,6 +92,14 @@ LEFT JOIN conversions_source USING(date, ad_id)
 LEFT JOIN action_values_source USING(date, ad_id)
 {%- endif %}
 {%- if not conversion_values_table_exists %}
+{%- else %}
+LEFT JOIN segment_actions_source USING(date, ad_id)
+{%- endif %}
+{%- if not segment_actions_table_exists %}
+{%- else %}
+LEFT JOIN segment_value_source USING(date, ad_id)
+{%- endif %}
+{%- if not segment_value_table_exists %}
 {%- else %}
 LEFT JOIN conversion_values_source USING(date, ad_id)
 {%- endif %}
