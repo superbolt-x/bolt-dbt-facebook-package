@@ -6,7 +6,7 @@
 
 SELECT 
     date,
-    ad_id,
+    ad_id::VARCHAR as ad_id,
     {% for action_type in action_types -%}
     {%- set alias = conversion_alias_config(action_type) if 'action' in table_name else conversion_alias_config(action_type~'_value') -%}
     {%- if alias|length %}
