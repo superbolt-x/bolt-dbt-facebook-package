@@ -8,7 +8,7 @@ SELECT
     date,
     ad_id,
     {% for action_type in action_types -%}
-    {%- set alias = conversion_alias_config(action_type~table_name.split('action')[1].split('s')[0]) if 'action' in table_name else conversion_alias_config(action_type~table_name.split('conversion')[1].split('s')[0]) -%}
+    {%- set alias = conversion_alias_config(action_type) if 'action' in table_name else conversion_alias_config(action_type~'_value') -%}
     {%- if alias|length %}
         COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN value ELSE 0 END), 0) as "{{alias}}_with_shared_items",
         {%- for attribution in attributions %}
