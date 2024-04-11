@@ -93,15 +93,15 @@ LEFT JOIN action_values_source USING(date, ad_id)
 {%- endif %}
 {%- if not conversion_values_table_exists %}
 {%- else %}
-LEFT JOIN segment_actions_source USING(date, ad_id)
+LEFT JOIN conversion_values_source USING(date, ad_id)
 {%- endif %}
 {%- if not segment_actions_table_exists %}
 {%- else %}
-LEFT JOIN segment_value_source USING(date, ad_id)
+LEFT JOIN segment_actions_source USING(date, ad_id)
 {%- endif %}
 {%- if not segment_value_table_exists %}
 {%- else %}
-LEFT JOIN conversion_values_source USING(date, ad_id)
+LEFT JOIN segment_value_source USING(date, ad_id)
 {%- endif %}
 
 {% if is_incremental() -%}
