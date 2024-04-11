@@ -17,15 +17,15 @@ SELECT
         {%- endfor -%}
     {%- else -%}
         {%- if 'action' in table_name %}
-        COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN value ELSE 0 END), 0) as "{{action_type}}{{table_name.split('action')[1].split('s')[0]}}",
+        COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN value ELSE 0 END), 0) as "{{action_type}}",
         {%- for attribution in attributions %}
-        COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN "{{attribution}}" ELSE 0 END), 0) as "{{action_type}}{{table_name.split('action')[1].split('s')[0]}}{{attribution}}"
+        COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN "{{attribution}}" ELSE 0 END), 0) as "{{action_type}}{{attribution}}"
         {%- if not loop.last %},{% endif -%}
         {%- endfor -%}
-        {%- elif 'conversion' in table_name %}
-        COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN value ELSE 0 END), 0) as "{{action_type}}{{table_name.split('conversion')[1].split('s')[0]}}",
+        {%- elif 'value' in table_name %}
+        COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN value ELSE 0 END), 0) as "{{action_type}}_value",
         {%- for attribution in attributions %}
-        COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN "{{attribution}}" ELSE 0 END), 0) as "{{action_type}}{{table_name.split('conversion')[1].split('s')[0]}}{{attribution}}"
+        COALESCE(SUM(CASE WHEN action_type = '{{action_type}}' THEN "{{attribution}}" ELSE 0 END), 0) as "{{action_type}}_value{{attribution}}"
         {%- if not loop.last %},{% endif -%}
         {%- endfor -%}
         {%- endif -%}
