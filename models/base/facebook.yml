@@ -42,6 +42,10 @@ sources:
         identifier: ads_insights_conversions
       - name: ads_insights_conversion_values
         identifier: ads_insights_conversion_values
+      - name: ads_insights_catalog_segment_actions
+        identifier: ads_insights_catalog_segment_actions
+      - name: ads_insights_catalog_segment_value
+        identifier: ads_insights_catalog_segment_value
       - name: ads_insights_age_actions
         identifier: ads_insights_age_actions
       - name: ads_insights_age_action_values
