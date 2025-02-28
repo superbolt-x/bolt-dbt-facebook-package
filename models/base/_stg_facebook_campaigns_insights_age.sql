@@ -64,21 +64,21 @@ with insights_source as (
 SELECT 
     *,
     MAX(_fivetran_synced) over (PARTITION BY account_name) as last_updated,
-    campaigns_id||'_'||date||'_'||age as unique_key
+    campaign_id||'_'||date||'_'||age as unique_key
 
 FROM insights_source 
 LEFT JOIN actions_source USING(date, campaign_id, _fivetran_id)
 {%- if not conversions_table_exists %}
 {%- else %}
-LEFT JOIN conversions_source USING(date, campaigns_id, _fivetran_id)
+LEFT JOIN conversions_source USING(date, campaign_id, _fivetran_id)
 {%- endif %}
 {%- if not action_values_table_exists %}
 {%- else %}
-LEFT JOIN action_values_source USING(date, campaigns_id, _fivetran_id)
+LEFT JOIN action_values_source USING(date, campaign_id, _fivetran_id)
 {%- endif %}
 {%- if not conversion_values_table_exists %}
 {%- else %}
-LEFT JOIN conversion_values_source USING(date, campaigns_id, _fivetran_id)
+LEFT JOIN conversion_values_source USING(date, campaign_id, _fivetran_id)
 {%- endif %}
 
 {% if is_incremental() -%}
