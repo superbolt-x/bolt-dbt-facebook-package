@@ -53,7 +53,30 @@ with insights_source as (
     {%- endif %}
 
         
-    {%- set segment_actions_table_exists = check_source_exists('gsheet_raw','ads_insights_catalog_segment_actions') %}
+    {%- set gsheet_segment_actions_table_exists = check_source_exists('gsheet_raw','ads_insights_catalog_segment_actions') %}
+    {%- if not gsheet_segment_actions_table_exists %}
+
+    {%- else %}
+    ,gsheet_segment_actions_source as (
+
+    {{ get_facebook_ads_insights__segment_source('catalog_segment_actions') }}
+
+    )
+    {%- endif %}
+
+        
+    {%- set gsheet_segment_value_table_exists = check_source_exists('gsheet_raw','ads_insights_catalog_segment_value') %}
+    {%- if not gsheet_segment_value_table_exists %}
+
+    {%- else %}
+    ,gsheet_segment_value_source as (
+
+    {{ get_facebook_ads_insights__segment_source('catalog_segment_value') }}
+
+    )
+    {%- endif %}
+
+    {%- set segment_actions_table_exists = check_source_exists('facebook_raw','ads_insights_catalog_segment_actions') %}
     {%- if not segment_actions_table_exists %}
 
     {%- else %}
@@ -65,7 +88,7 @@ with insights_source as (
     {%- endif %}
 
         
-    {%- set segment_value_table_exists = check_source_exists('gsheet_raw','ads_insights_catalog_segment_value') %}
+    {%- set segment_value_table_exists = check_source_exists('facebook_raw','ads_insights_catalog_segment_value') %}
     {%- if not segment_value_table_exists %}
 
     {%- else %}
@@ -102,6 +125,14 @@ LEFT JOIN segment_actions_source USING(date, ad_id)
 {%- if not segment_value_table_exists %}
 {%- else %}
 LEFT JOIN segment_value_source USING(date, ad_id)
+{%- endif %}
+{%- if not gsheet_segment_actions_table_exists %}
+{%- else %}
+LEFT JOIN gsheet_segment_actions_source USING(date, ad_id)
+{%- endif %}
+{%- if not gsheet_segment_value_table_exists %}
+{%- else %}
+LEFT JOIN gsheet_segment_value_source USING(date, ad_id)
 {%- endif %}
 
 {% if is_incremental() -%}
