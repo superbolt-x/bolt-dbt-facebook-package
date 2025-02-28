@@ -30,6 +30,8 @@ sources:
 
         loaded_at_field: _fivetran_synced
         
+      - name: campaigns_insights_age
+        identifier: campaigns_insights_age
       - name: ads_insights_age
         identifier: ads_insights_age
       - name: ads_insights_actions
@@ -57,7 +59,15 @@ sources:
       - name: ads_insights_region_conversions
         identifier: ads_insights_region_conversions
       - name: ads_insights_region_conversion_values
-        identifier: ads_insights_region_conversion_values  
+        identifier: ads_insights_region_conversion_values
+      - name: campaigns_insights_age_actions
+        identifier: campaigns_insights_age_actions
+      - name: campaigns_insights_age_action_values
+        identifier: campaigns_insights_age_action_values
+      - name: campaigns_insights_age_conversions
+        identifier: campaigns_insights_age_conversions
+      - name: campaigns_insights_age_conversion_values
+        identifier: campaigns_insights_age_conversion_values
       - name: adsets
         identifier: ad_set_history          
       - name: campaigns
