@@ -1,4 +1,4 @@
-{%- macro get_facebook_ads_insights__segment_source(table_name) -%}
+{%- macro get_gsheet_insights__segment_source(table_name) -%}
 
 
 {%- set action_types = dbt_utils.get_column_values(source('gsheet_raw','ads_insights_'~table_name),'action_type') -%}
