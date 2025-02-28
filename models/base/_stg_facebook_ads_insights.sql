@@ -59,7 +59,7 @@ with insights_source as (
     {%- else %}
     ,gsheet_segment_actions_source as (
 
-    {{ get_facebook_ads_insights__segment_source('catalog_segment_actions') }}
+    {{ get_gsheet_insights__segment_source('catalog_segment_actions') }}
 
     )
     {%- endif %}
@@ -71,7 +71,7 @@ with insights_source as (
     {%- else %}
     ,gsheet_segment_value_source as (
 
-    {{ get_facebook_ads_insights__segment_source('catalog_segment_value') }}
+    {{ get_gsheet_insights__segment_source('catalog_segment_value') }}
 
     )
     {%- endif %}
