@@ -34,7 +34,7 @@ SELECT
 
 {% endfor %}
 
-    FROM {{ source('facebook_raw','ads_insights_'~table_name) }}
+    FROM {{ source('gsheet_raw','ads_insights_'~table_name) }}
 
     GROUP BY 1,2
 
