@@ -6,7 +6,7 @@
 
 SELECT 
     date,
-    ad_id,
+    campaign_id,
     {% for action_type in action_types -%}
     {%- set alias = conversion_alias_config(action_type~table_name.split('action')[1].split('s')[0]) if 'action' in table_name else conversion_alias_config(action_type~table_name.split('conversion')[1].split('s')[0]) -%}
     {%- if alias|length %}
