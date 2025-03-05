@@ -47,4 +47,4 @@ FROM
 
     {%- endfor %}
     )
-LEFT JOIN campaigns USING(campaign_id)
+LEFT JOIN campaigns USING(account_id,campaign_id)
