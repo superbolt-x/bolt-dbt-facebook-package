@@ -32,12 +32,12 @@ WITH
     {%- endfor %}
 
     campaigns AS 
-    (SELECT account_id, campaign_id, campaign_name, campaign_effective_status
+    (SELECT account_id::varchar account_id, campaign_id::varchar as campaign_id, campaign_name, campaign_effective_status
     FROM {{ ref('facebook_campaigns') }}
     ),
 
     accounts AS 
-    (SELECT account_id, account_name, account_currency
+    (SELECT account_id::varchar as account_id, account_name, account_currency
     FROM {{ ref('facebook_accounts') }} 
     )
 
