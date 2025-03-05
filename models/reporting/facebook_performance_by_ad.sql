@@ -32,17 +32,17 @@ WITH
     {%- endfor %}
 
     ads AS 
-    (SELECT account_id::varchar as account_id, ad_id::varchar as ad_id, ad_name, ad_effective_status
+    (SELECT account_id, ad_id, ad_name, ad_effective_status
     FROM {{ ref('facebook_ads') }}
     ),
 
     adsets AS 
-    (SELECT account_id::varchar as account_id, adset_id::varchar as adset_id, adset_name, adset_effective_status
+    (SELECT account_id, adset_id, adset_name, adset_effective_status
     FROM {{ ref('facebook_adsets') }}
     ),
 
     campaigns AS 
-    (SELECT account_id::varchar as account_id, campaign_id::varchar as campaign_id, campaign_name, campaign_effective_status
+    (SELECT account_id, campaign_id, campaign_name, campaign_effective_status
     FROM {{ ref('facebook_campaigns') }}
     )
 
@@ -58,6 +58,6 @@ FROM
 
     {%- endfor %}
     )
-LEFT JOIN ads USING(account_id, ad_id)
-LEFT JOIN adsets USING(account_id, adset_id)
-LEFT JOIN campaigns USING(account_id, campaign_id)
+LEFT JOIN ads USING(ad_id)
+LEFT JOIN adsets USING(adset_id)
+LEFT JOIN campaigns USING(campaign_id)
