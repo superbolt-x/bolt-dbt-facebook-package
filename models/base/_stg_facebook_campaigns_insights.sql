@@ -1,12 +1,3 @@
-{%- set source_relation = adapter.get_relation(
-      database=source('facebook_raw', 'campaigns_insights').database,
-      schema=source('facebook_raw', 'campaigns_insights').schema,
-      identifier=source('facebook_raw', 'campaigns_insights').name) -%}
-
-{% set table_exists=source_relation is not none   %}
-
-{% if table_exists %}
-
 {{ config( 
         materialized='incremental',
         unique_key='unique_key',
@@ -21,6 +12,12 @@ with insights_source as (
     FROM {{ source(schema_name, table_name) }}
 
     ),
+
+    actions_source as (
+
+    {{ get_facebook_campaigns_insights__child_source('actions') }}
+
+    )
     
     {%- set conversions_table_exists = check_source_exists('facebook_raw','campaigns_insights_conversions') %}
     {%- if not conversions_table_exists %}
@@ -28,7 +25,7 @@ with insights_source as (
     {%- else %}
     ,conversions_source as (
 
-    {{ get_facebook_campaigns_insights_age__child_source('conversions') }}
+    {{ get_facebook_campaigns_insights__child_source('conversions') }}
 
     )
     {%- endif %}
@@ -39,7 +36,7 @@ with insights_source as (
     {%- else %}
     ,action_values_source as (
 
-    {{ get_facebook_campaigns_insights_age__child_source('action_values') }}
+    {{ get_facebook_campaigns_insights__child_source('action_values') }}
 
     )
     {%- endif %}
@@ -50,46 +47,65 @@ with insights_source as (
     {%- else %}
     ,conversion_values_source as (
 
-    {{ get_facebook_campaigns_insights_age__child_source('conversion_values') }}
+    {{ get_facebook_campaigns_insights__child_source('conversion_values') }}
 
     )
     {%- endif %}
 
+    {%- set segment_actions_table_exists = check_source_exists('facebook_raw','campaigns_insights_catalog_segment_actions') %}
+    {%- if not segment_actions_table_exists %}
+
+    {%- else %}
+    ,segment_actions_source as (
+
+    {{ get_facebook_campaigns_insights__segment_source('catalog_segment_actions') }}
+
+    )
+    {%- endif %}
+
+        
+    {%- set segment_value_table_exists = check_source_exists('facebook_raw','campaigns_insights_catalog_segment_value') %}
+    {%- if not segment_value_table_exists %}
+
+    {%- else %}
+    ,segment_value_source as (
+
+    {{ get_facebook_campaigns_insights__segment_source('catalog_segment_value') }}
+
+    )
+    {%- endif %}
+        
 SELECT 
     *,
     MAX(_fivetran_synced) over (PARTITION BY account_name) as last_updated,
     campaign_id||'_'||date as unique_key
 
 FROM insights_source 
+LEFT JOIN actions_source USING(date, campaign_id)
 {%- if not conversions_table_exists %}
 {%- else %}
-LEFT JOIN conversions_source USING(date, campaign_id, _fivetran_id)
+LEFT JOIN conversions_source USING(date, campaign_id)
 {%- endif %}
 {%- if not action_values_table_exists %}
 {%- else %}
-LEFT JOIN action_values_source USING(date, campaign_id, _fivetran_id)
+LEFT JOIN action_values_source USING(date, campaign_id)
 {%- endif %}
 {%- if not conversion_values_table_exists %}
 {%- else %}
-LEFT JOIN conversion_values_source USING(date, campaign_id, _fivetran_id)
+LEFT JOIN conversion_values_source USING(date, campaign_id)
+{%- endif %}
+{%- if not segment_actions_table_exists %}
+{%- else %}
+LEFT JOIN segment_actions_source USING(date, campaign_id)
+{%- endif %}
+{%- if not segment_value_table_exists %}
+{%- else %}
+LEFT JOIN segment_value_source USING(date, campaign_id)
 {%- endif %}
 
 {% if is_incremental() -%}
 
   -- this filter will only be applied on an incremental run
 where date >= (select max(date)-7 from {{ this }})
-
-{% endif %}
-
-
-{% else %}
-
-select
-    null::varchar as campaign_id,
-    null::date as date,
-    null::varchar as _fivetran_id
-
--- this means there will be zero rows
-where false
 
 {% endif %}
