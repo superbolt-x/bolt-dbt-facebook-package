@@ -78,12 +78,20 @@ sources:
         identifier: campaign_history
       - name: accounts
         identifier: account_history
-      - name: campaigns_insights_conversions
-        identifier: campaigns_insights_conversions
+      - name: campaigns_insights
+        identifier: campaigns_insights
+      - name: campaigns_insights_actions
+        identifier: campaigns_insights_actions
       - name: campaigns_insights_action_values
         identifier: campaigns_insights_action_values
+      - name: campaigns_insights_conversions
+        identifier: campaigns_insights_conversions
       - name: campaigns_insights_conversion_values
         identifier: campaigns_insights_conversion_values
+      - name: campaigns_insights_catalog_segment_actions
+        identifier: campaigns_insights_catalog_segment_actions
+      - name: campaigns_insights_catalog_segment_value
+        identifier: campaigns_insights_catalog_segment_value
 
 models:
   - name: facebook_ads
