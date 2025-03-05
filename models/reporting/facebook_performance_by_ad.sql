@@ -47,7 +47,7 @@ WITH
     ),
 
     accounts AS 
-    (SELECT account_id, account_name, account_name, account_currency
+    (SELECT account_id, account_name, account_currency
     FROM {{ ref('facebook_accounts') }} 
     )
 
@@ -66,3 +66,4 @@ FROM
 LEFT JOIN ads USING(account_id, ad_id)
 LEFT JOIN adsets USING(account_id, adset_id)
 LEFT JOIN campaigns USING(account_id, campaign_id)
+LEFT JOIN accounts USING(account_id)
