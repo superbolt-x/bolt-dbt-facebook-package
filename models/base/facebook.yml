@@ -110,3 +110,9 @@ models:
         tests: 
           - unique
           - not_null
+  - name: facebook_campaigns_insights
+    columns:
+      - name: unique_key
+        tests: 
+          - unique
+          - not_null
