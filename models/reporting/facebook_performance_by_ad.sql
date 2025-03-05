@@ -32,7 +32,7 @@ WITH
     {%- endfor %}
 
     ads AS 
-    (SELECT account_id, ad_id, ad_name, ad_effective_status
+    (SELECT account_id, ad_id::varchar as ad_id, ad_name, ad_effective_status
     FROM {{ ref('facebook_ads') }}
     ),
 
