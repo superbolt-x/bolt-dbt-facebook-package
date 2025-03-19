@@ -2,7 +2,7 @@
     materialized = 'incremental',
     unique_key = 'unique_id',
     on_schema_change = 'append_new_columns',
-    alias = target.database + '_facebook_performance_by_ad'
+    alias = target.database + '_facebook_performance_by_ad_consolidated'
 ) }}
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
