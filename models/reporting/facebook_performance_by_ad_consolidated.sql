@@ -1,4 +1,7 @@
 {{ config (
+    materialized = 'incremental',
+    unique_key = 'unique_id',
+    on_schema_change = 'append_new_columns',
     alias = target.database + '_facebook_performance_by_ad'
 ) }}
 
@@ -15,22 +18,31 @@
     "in",
     exclude_fields
 ) -%}
-WITH {% if var('currency') != 'USD' -%}
-    currency AS (
 
-        SELECT
-            DISTINCT DATE,
-            "{{ var('currency') }}" AS raw_rate,
-            LAG(raw_rate) ignore nulls over (
-                ORDER BY
-                    DATE
-            ) AS exchange_rate
-        FROM
-            utilities.dates
-            LEFT JOIN utilities.currency USING(DATE)
-        WHERE
-            DATE <= CURRENT_DATE
-    ),
+WITH stg_data AS (
+    SELECT *
+    FROM {{ ref('_stg_facebook_ads_insights') }}
+    {% if is_incremental() %}
+    -- Propager le filtre incrémental
+    WHERE date >= (select max(date)-7 from {{ this }})
+    {% endif %}
+),
+
+{% if var('currency') != 'USD' -%}
+currency AS (
+    SELECT
+        DISTINCT DATE,
+        "{{ var('currency') }}" AS raw_rate,
+        LAG(raw_rate) ignore nulls over (
+            ORDER BY
+                DATE
+        ) AS exchange_rate
+    FROM
+        utilities.dates
+        LEFT JOIN utilities.currency USING(DATE)
+    WHERE
+        DATE <= CURRENT_DATE
+),
 {%- endif -%}
 
 {%- set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' %}
@@ -53,55 +65,9 @@ insights AS (
             {%- endif %}
         {%- endfor %}
     FROM
-        {{ ref('_stg_facebook_ads_insights') }}
+        stg_data
 
         {%- if var('currency') != 'USD' %}
             LEFT JOIN currency USING(DATE)
         {%- endif %}
 ),
-facebook_ads_insights AS (
-    SELECT
-        *,
-        {{ get_date_parts('date') }}
-    FROM
-        insights
-),
-{%- set measures = adapter.get_columns_in_relation(facebook_ads_insights)
-                    |map(attribute="name")
-                    |reject("in",exclude_fields)
-                    |reject("in",dimensions)
-                    |list
-                    -%}
-
--- facebook_ads
-{%- set selected_fields = [
-    "id",
-    "name",
-    "effective_status",
-    "account_id",
-    "updated_time"
-] -%}
-{%- set schema_name, table_name = 'facebook_raw', 'ads' -%}
-staging AS 
-    (SELECT
-    
-        {% for field in selected_fields -%}
-        {{ get_facebook_clean_field(table_name, field) }},
-        {% endfor -%}
-        MAX(updated_time) OVER (PARTITION BY id) as last_updated_time
-
-    FROM {{ source(schema_name, table_name) }}
-    ),
-facebook_ads AS
-    (SELECT
-        *,
-        ad_id AS unique_key
-    FROM
-        staging
-    WHERE
-        updated_time = last_updated_time
-    ),
-    
-
-
-
