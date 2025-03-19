@@ -26,10 +26,9 @@ WITH stg_data AS (
     -- Spread the incremental filter
     WHERE date >= (select max(date)-7 from {{ this }})
     {% endif %}
-),
-
+)
 {% if var('currency') != 'USD' -%}
-currency AS (
+, currency AS (
     SELECT
         DISTINCT DATE,
         "{{ var('currency') }}" AS raw_rate,
@@ -42,11 +41,10 @@ currency AS (
         LEFT JOIN utilities.currency USING(DATE)
     WHERE
         DATE <= CURRENT_DATE
-),
+)
 {%- endif -%}
 
-{%- set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' %}
-insights AS (
+, insights AS (
     SELECT
         {%- for field in stg_fields if (
                 (
