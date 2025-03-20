@@ -24,7 +24,7 @@ WITH stg_data AS (
     FROM {{ ref('_stg_facebook_ads_insights') }}
     {% if is_incremental() %}
     -- Spread the incremental filter
-    WHERE date >= (select coalesce(max(date)-7,'1900-01-01') from {{ this }})
+    WHERE date >= (select coalesce(max(date)-365,'1900-01-01') from {{ this }})
     {% endif %}
 )
 {% if var('currency') != 'USD' -%}
