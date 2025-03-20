@@ -1,6 +1,5 @@
 {{ config (
     unique_key = 'unique_id',
-    materialized = 'incremental',
     on_schema_change = 'append_new_columns',
     alias = target.database + '_facebook_performance_by_ad_consolidated'
 ) }}
@@ -22,10 +21,6 @@
 WITH stg_data AS (
     SELECT *
     FROM {{ ref('_stg_facebook_ads_insights') }}
-    {% if is_incremental() %}
-    -- Spread the incremental filter
-    WHERE date >= (select coalesce(max(date)-500,'1900-01-01') from {{ this }})
-    {% endif %}
 )
     
 {% if var('currency') != 'USD' -%}
