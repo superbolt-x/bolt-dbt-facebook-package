@@ -211,9 +211,20 @@ WITH
             id::bigint as ad_id,
             name as ad_name,
             effective_status as ad_effective_status,
-            account_id
+            account_id,
+            ROW_NUMBER() OVER(PARTITION BY id ORDER BY updated_time DESC) as rn
         FROM {{ source('facebook_raw', 'ads') }}
-        QUALIFY ROW_NUMBER() OVER(PARTITION BY id ORDER BY updated_time DESC) = 1
+        WHERE 1=1 -- Will be filtered in the query below
+    ),
+    
+    ads_latest AS (
+        SELECT
+            ad_id,
+            ad_name,
+            ad_effective_status,
+            account_id
+        FROM ads
+        WHERE rn = 1
     ),
     
     adsets AS (
@@ -221,9 +232,20 @@ WITH
             id::bigint as adset_id,
             name as adset_name,
             effective_status as adset_effective_status,
-            account_id
+            account_id,
+            ROW_NUMBER() OVER(PARTITION BY id ORDER BY updated_time DESC) as rn
         FROM {{ source('facebook_raw', 'adsets') }}
-        QUALIFY ROW_NUMBER() OVER(PARTITION BY id ORDER BY updated_time DESC) = 1
+        WHERE 1=1 -- Will be filtered in the query below
+    ),
+    
+    adsets_latest AS (
+        SELECT
+            adset_id,
+            adset_name,
+            adset_effective_status,
+            account_id
+        FROM adsets
+        WHERE rn = 1
     ),
     
     campaigns AS (
@@ -231,9 +253,20 @@ WITH
             id::bigint as campaign_id,
             name as campaign_name,
             effective_status as campaign_effective_status,
-            account_id
+            account_id,
+            ROW_NUMBER() OVER(PARTITION BY id ORDER BY updated_time DESC) as rn
         FROM {{ source('facebook_raw', 'campaigns') }}
-        QUALIFY ROW_NUMBER() OVER(PARTITION BY id ORDER BY updated_time DESC) = 1
+        WHERE 1=1 -- Will be filtered in the query below
+    ),
+    
+    campaigns_latest AS (
+        SELECT
+            campaign_id,
+            campaign_name,
+            campaign_effective_status,
+            account_id
+        FROM campaigns
+        WHERE rn = 1
     ),
 
     {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
@@ -281,6 +314,6 @@ SELECT
     -- Create a unique key for incremental processing
     perf.ad_id::varchar || '_' || perf.date || '_' || perf.date_granularity as ad_id_date_granularity_key
 FROM aggregated_performance perf
-LEFT JOIN ads ad ON perf.account_id = ad.account_id AND perf.ad_id::varchar = ad.ad_id::varchar
-LEFT JOIN adsets adset ON perf.account_id = adset.account_id AND perf.adset_id = adset.adset_id
-LEFT JOIN campaigns campaign ON perf.account_id = campaign.account_id AND perf.campaign_id = campaign.campaign_id
+LEFT JOIN ads_latest ad ON perf.account_id = ad.account_id AND perf.ad_id::varchar = ad.ad_id::varchar
+LEFT JOIN adsets_latest adset ON perf.account_id = adset.account_id AND perf.adset_id = adset.adset_id
+LEFT JOIN campaigns_latest campaign ON perf.account_id = campaign.account_id AND perf.campaign_id = campaign.campaign_id
