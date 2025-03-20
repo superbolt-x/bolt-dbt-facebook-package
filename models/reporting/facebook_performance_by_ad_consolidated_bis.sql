@@ -70,7 +70,7 @@ WITH
     {%- if var('currency') != 'USD' %}
     LEFT JOIN currency USING(date)
     {%- endif %}
-    )
+    ),
 
     insights_stg AS 
     (SELECT *,
