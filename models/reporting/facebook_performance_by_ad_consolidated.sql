@@ -4,19 +4,47 @@
     alias = target.database + '_facebook_performance_by_ad_consolidated'
 ) }}
 
-{%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
-{%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
-{%- set dimensions = ['account_id','campaign_id','adset_id','ad_id','attribution_setting'] -%}
-
 -- facebook_ads_insights
-{%- set currency_fields = [ "spend", "revenue" ] -%}
-{%- set exclude_fields = [ "_fivetran_id", "_fivetran_synced", "account_name", "account_currency", "campaign_name", "adset_name", "ad_name", "inline_link_clicks", "offsite_conversion.fb_pixel_view_content", "view_content", "omni_view_content", "offsite_conversion.fb_pixel_view_content_value", "omni_view_content_value", "lead", "leadgen_grouped", "omni_add_to_cart", "web_add_to_cart", "add_to_cart_value", "omni_add_to_cart_value", "web_add_to_cart_value", "omni_initiated_checkout", "web_initiate_checkout", "omni_initiated_checkout_value", "omni_purchase", "web_purchases", "omni_purchase_value" ] -%}
+{%- set currency_fields = [
+    "spend",
+    "revenue"
+]
+-%}
+
+{%- set exclude_fields = [
+    "_fivetran_id",
+    "_fivetran_synced",
+    "account_name",
+    "account_currency",
+    "campaign_name",
+    "adset_name",
+    "ad_name",
+    "inline_link_clicks",
+    "offsite_conversion.fb_pixel_view_content",
+    "view_content",
+    "omni_view_content",
+    "offsite_conversion.fb_pixel_view_content_value",
+    "omni_view_content_value",
+    "lead",
+    "leadgen_grouped",
+    "omni_add_to_cart",
+    "web_add_to_cart",
+    "add_to_cart_value",
+    "omni_add_to_cart_value",
+    "web_add_to_cart_value",
+    "omni_initiated_checkout",
+    "web_initiate_checkout",
+    "omni_initiated_checkout_value",
+    "omni_purchase",
+    "web_purchases",
+    "omni_purchase_value"
+]
+-%}
+
 {%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_ads_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
-                    |reject("in",dimensions)
-                    |list
--%}
+                    -%}  
 
 WITH stg_data AS (
     SELECT *
@@ -148,6 +176,8 @@ facebook_campaigns AS (
 
 -- Performances by granularity
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
+{%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
+{%- set dimensions = ['account_id','campaign_id','adset_id','ad_id','attribution_setting'] -%}
 {%- set measures = adapter.get_columns_in_relation(ref('facebook_ads_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
