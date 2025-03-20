@@ -2,7 +2,7 @@
     unique_key = 'unique_id',
     on_schema_change = 'append_new_columns',
     alias = target.database + '_facebook_performance_by_ad_consolidated'
-) }}
+)}}
 
 {%- set currency_fields = [
     "spend",
@@ -57,8 +57,8 @@ WITH
 
     {%- set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' -%}
     
-    insights AS 
-    (SELECT 
+    insights AS (
+    SELECT 
         {%- for field in stg_fields if (("_1_d_view" not in field and "_7_d_click" not in field) or ("purchases" in field or "revenue" in field)) -%}
         {%- if field in currency_fields or '_value' in field %}
         "{{ field }}"::float/{{ exchange_rate }} as "{{ field }}"
@@ -73,13 +73,13 @@ WITH
     {%- endif %}
     ),
 
-facebook_ads_insights AS (
+    facebook_ads_insights AS (
     SELECT
         *,
         {{ get_date_parts('date') }}
     FROM
         insights
-),
+    ),
 
 -- facebook_ads
 {%- set selected_fields = [
@@ -90,7 +90,7 @@ facebook_ads_insights AS (
     "updated_time"
 ] -%}
 {%- set schema_name, table_name = 'facebook_raw', 'ads' -%}
-ads_staging AS (
+    ads_staging AS (
     SELECT
         {% for field in selected_fields -%}
         {{ get_facebook_clean_field(table_name, field) }},
@@ -98,9 +98,9 @@ ads_staging AS (
         MAX(updated_time) OVER (PARTITION BY id) as last_updated_time
     FROM {{ source(schema_name, table_name) }}
     -- Dimensions are generally not incrementally filtered
-),
+    ),
 
-facebook_ads AS (
+    facebook_ads AS (
     SELECT
         *,
         ad_id AS unique_key
@@ -108,7 +108,7 @@ facebook_ads AS (
         ads_staging
     WHERE
         updated_time = last_updated_time
-),
+    ),
 
 -- facebook_adsets
 {%- set selected_fields = [
