@@ -16,7 +16,7 @@
                     |reject("in",exclude_fields)
                     |reject("in",dimensions)
                     |list
-) -%}
+-%}
 
 WITH stg_data AS (
     SELECT *
