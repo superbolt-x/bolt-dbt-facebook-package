@@ -4,7 +4,6 @@
     alias = target.database + '_facebook_performance_by_ad_consolidated'
 ) }}
 
--- facebook_ads_insights
 {%- set currency_fields = [
     "spend",
     "revenue"
