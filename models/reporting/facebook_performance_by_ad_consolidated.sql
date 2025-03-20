@@ -29,7 +29,7 @@ WITH stg_data AS (
         LAG(raw_rate) ignore nulls over (order by date) as exchange_rate
     FROM utilities.dates 
     LEFT JOIN utilities.currency USING(date)
-    WHERE date <= current_date),
+    WHERE date <= current_date)
 {%- endif -%}
 
 {%- set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' %}
