@@ -164,30 +164,30 @@ WITH
     -- Apply currency conversion and extract date parts in one step
     insights_processed AS (
         SELECT 
-            ad_id,
-            campaign_id,
-            adset_id,
-            account_id,
-            attribution_setting,
-            date,
-            {{ get_date_parts('date') }},
+            combined_insights.ad_id,
+            combined_insights.campaign_id,
+            combined_insights.adset_id,
+            combined_insights.account_id,
+            combined_insights.attribution_setting,
+            combined_insights.date,
+            {{ get_date_parts('combined_insights.date') }},
             
             -- Apply currency conversion dynamically to all needed fields
             {% for field in currency_fields -%}
-            "{{ field }}"::float/{{ exchange_rate }} as "{{ field }}",
+            combined_insights."{{ field }}"::float/{{ exchange_rate }} as "{{ field }}",
             {% endfor -%}
             
             -- Include all other non-currency fields without modification
             {% for col in adapter.get_columns_in_relation(source('facebook_raw', 'ads_insights')) -%}
             {% if col.name not in exclude_fields and col.name not in currency_fields and col.name not in ['ad_id', 'campaign_id', 'adset_id', 'account_id', 'attribution_setting', 'date'] -%}
-            "{{ col.name }}",
+            combined_insights."{{ col.name }}",
             {% endif -%}
             {% endfor -%}
 
             -- Include value fields with currency conversion 
             {% for col in adapter.get_columns_in_relation(source('facebook_raw', 'ads_insights')) -%}
             {% if '_value' in col.name and col.name not in exclude_fields and col.name not in currency_fields -%}
-            "{{ col.name }}"::float/{{ exchange_rate }} as "{{ col.name }}",
+            combined_insights."{{ col.name }}"::float/{{ exchange_rate }} as "{{ col.name }}",
             {% endif -%}
             {% endfor -%}
             
@@ -286,10 +286,10 @@ WITH
             '{{date_granularity}}' as date_granularity,
             {{date_granularity}} as date,
             {%- for dimension in dimensions %}
-            {{ dimension }},
+            insights_processed.{{ dimension }},
             {%- endfor %}
             {% for measure in measures -%}
-            COALESCE(SUM("{{ measure }}"),0) as "{{ measure }}"
+            COALESCE(SUM(insights_processed."{{ measure }}"),0) as "{{ measure }}"
             {%- if not loop.last %},{%- endif %}
             {% endfor %}
         FROM insights_processed
