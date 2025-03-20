@@ -98,12 +98,6 @@ WITH
     FROM {{ source(schema_name, table_name) }}
     ),
 
-    ads AS
-    (SELECT *,
-        ad_id as unique_key
-    FROM ads_staging 
-    WHERE updated_time = last_updated_time),
-
 {%- set selected_fields = [
     "id",
     "name",
@@ -128,12 +122,6 @@ WITH
     FROM {{ source(schema_name, table_name) }}
     ),
 
-    adsets AS
-    (SELECT *,
-        adset_id as unique_key
-    FROM adsets_staging 
-    WHERE updated_time = last_updated_time),
-
 {%- set selected_fields = [
     "id",
     "name",
@@ -154,12 +142,6 @@ WITH
 
     FROM {{ source(schema_name, table_name) }}
     ),
-
-    campaigns AS
-    (SELECT *,
-        campaign_id as unique_key
-    FROM campaigns_staging 
-    WHERE updated_time = last_updated_time),
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
@@ -184,9 +166,27 @@ WITH
         COALESCE(SUM("{{ measure }}"),0) as "{{ measure }}"
         {%- if not loop.last %},{%- endif %}
         {% endfor %}
-    FROM {{ ref('facebook_ads_insights') }}
+    FROM insights_stg
     GROUP BY {{ range(1, dimensions|length +2 +1)|list|join(',') }}),
     {%- endfor %}
+
+    ads AS
+    (SELECT *,
+        ad_id as unique_key
+    FROM ads_staging 
+    WHERE updated_time = last_updated_time),
+    
+    adsets AS
+    (SELECT *,
+        adset_id as unique_key
+    FROM adsets_staging 
+    WHERE updated_time = last_updated_time),
+    
+    campaigns AS
+    (SELECT *,
+        campaign_id as unique_key
+    FROM campaigns_staging 
+    WHERE updated_time = last_updated_time)
 
 SELECT *,
     {{ get_facebook_default_campaign_types('campaign_name')}},
