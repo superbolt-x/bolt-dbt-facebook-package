@@ -1,5 +1,6 @@
 {{ config (
     unique_key = 'unique_id',
+    materialized = 'incremental',
     on_schema_change = 'append_new_columns',
     alias = target.database + '_facebook_performance_by_ad_consolidated'
 ) }}
@@ -11,17 +12,22 @@
 -- facebook_ads_insights
 {%- set currency_fields = [ "spend", "revenue" ] -%}
 {%- set exclude_fields = [ "_fivetran_id", "_fivetran_synced", "account_name", "account_currency", "campaign_name", "adset_name", "ad_name", "inline_link_clicks", "offsite_conversion.fb_pixel_view_content", "view_content", "omni_view_content", "offsite_conversion.fb_pixel_view_content_value", "omni_view_content_value", "lead", "leadgen_grouped", "omni_add_to_cart", "web_add_to_cart", "add_to_cart_value", "omni_add_to_cart_value", "web_add_to_cart_value", "omni_initiated_checkout", "web_initiate_checkout", "omni_initiated_checkout_value", "omni_purchase", "web_purchases", "omni_purchase_value" ] -%}
-{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_ads_insights')) | map(
-    attribute = "name"
-) | reject(
-    "in",
-    exclude_fields
+{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_ads_insights'))
+                    |map(attribute="name")
+                    |reject("in",exclude_fields)
+                    |reject("in",dimensions)
+                    |list
 ) -%}
 
 WITH stg_data AS (
     SELECT *
     FROM {{ ref('_stg_facebook_ads_insights') }}
+    {% if is_incremental() %}
+    -- Spread the incremental filter
+    WHERE date >= (select coalesce(max(date)-500,'1900-01-01') from {{ this }})
+    {% endif %}
 )
+    
 {% if var('currency') != 'USD' -%}
 , currency AS (
     SELECT
@@ -63,6 +69,7 @@ WITH stg_data AS (
             LEFT JOIN currency USING(DATE)
         {%- endif %}
 ),
+
 facebook_ads_insights AS (
     SELECT
         *,
