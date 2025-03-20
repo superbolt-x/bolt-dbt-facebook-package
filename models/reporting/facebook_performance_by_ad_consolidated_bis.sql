@@ -172,7 +172,6 @@ WITH
 
     ads AS
     (SELECT account_id, ad_id::varchar as ad_id, ad_name, ad_effective_status
-        ad_id as unique_key
     FROM ads_staging 
     WHERE updated_time = last_updated_time),
     
