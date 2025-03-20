@@ -24,21 +24,15 @@ WITH stg_data AS (
 )
     
 {% if var('currency') != 'USD' -%}
-, currency AS (
-    SELECT
-        DISTINCT DATE,
-        "{{ var('currency') }}" AS raw_rate,
-        LAG(raw_rate) ignore nulls over (
-            ORDER BY
-                DATE
-        ) AS exchange_rate
-    FROM
-        utilities.dates
-        LEFT JOIN utilities.currency USING(DATE)
-    WHERE
-        DATE <= CURRENT_DATE
-)
+, currency AS
+    (SELECT DISTINCT date, "{{ var('currency') }}" as raw_rate, 
+        LAG(raw_rate) ignore nulls over (order by date) as exchange_rate
+    FROM utilities.dates 
+    LEFT JOIN utilities.currency USING(date)
+    WHERE date <= current_date),
 {%- endif -%}
+
+{%- set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' %}
 
 , insights AS (
     SELECT
