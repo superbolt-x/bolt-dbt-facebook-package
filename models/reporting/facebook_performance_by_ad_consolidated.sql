@@ -21,43 +21,34 @@
 WITH stg_data AS (
     SELECT *
     FROM {{ ref('_stg_facebook_ads_insights') }}
-)
+),
     
 {% if var('currency') != 'USD' -%}
-, currency AS
+currency AS
     (SELECT DISTINCT date, "{{ var('currency') }}" as raw_rate, 
         LAG(raw_rate) ignore nulls over (order by date) as exchange_rate
     FROM utilities.dates 
     LEFT JOIN utilities.currency USING(date)
-    WHERE date <= current_date)
+    WHERE date <= current_date),
 {%- endif -%}
 
 {%- set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' %}
 
-, insights AS (
-    SELECT
-        {%- for field in stg_fields if (
-                (
-                    "_1_d_view" not in field and "_7_d_click" not in field
-                ) or (
-                    "purchases" in field or "revenue" in field
-                )
-            ) -%}
-            {%- if field in currency_fields or '_value' in field %}
-                "{{ field }}" :: FLOAT / {{ exchange_rate }} AS "{{ field }}"
-            {%- else %}
-                "{{ field }}"
-            {%- endif -%}
-
-            {%- if not loop.last %},
-            {%- endif %}
+insights AS 
+    (SELECT 
+        {%- for field in stg_fields if (("_1_d_view" not in field and "_7_d_click" not in field) or ("purchases" in field or "revenue" in field)) -%}
+        {%- if field in currency_fields or '_value' in field %}
+        "{{ field }}"::float/{{ exchange_rate }} as "{{ field }}"
+        {%- else %}
+        "{{ field }}"
+        {%- endif -%}
+        {%- if not loop.last %},{%- endif %}
         {%- endfor %}
-    FROM
-        stg_data
-        {%- if var('currency') != 'USD' %}
-            LEFT JOIN currency USING(DATE)
-        {%- endif %}
-),
+    FROM {{ ref('_stg_facebook_ads_insights') }}
+    {%- if var('currency') != 'USD' %}
+    LEFT JOIN currency USING(date)
+    {%- endif %}
+    ),
 
 facebook_ads_insights AS (
     SELECT
