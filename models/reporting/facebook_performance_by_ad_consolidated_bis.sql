@@ -171,20 +171,18 @@ WITH
     {%- endfor %}
 
     ads AS
-    (SELECT *,
+    (SELECT account_id, ad_id::varchar as ad_id, ad_name, ad_effective_status
         ad_id as unique_key
     FROM ads_staging 
     WHERE updated_time = last_updated_time),
     
     adsets AS
-    (SELECT *,
-        adset_id as unique_key
+    (SELECT account_id, adset_id, adset_name, adset_effective_status
     FROM adsets_staging 
     WHERE updated_time = last_updated_time),
     
     campaigns AS
-    (SELECT *,
-        campaign_id as unique_key
+    (SELECT account_id, campaign_id, campaign_name, campaign_effective_status
     FROM campaigns_staging 
     WHERE updated_time = last_updated_time)
 
