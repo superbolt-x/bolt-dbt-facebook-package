@@ -20,7 +20,7 @@
 
 WITH stg_data AS (
     SELECT *
-    FROM facebook_base._stg_facebook_ads_insights
+    FROM "facebook_base"."_stg_facebook_ads_insights"
 ),
     
 {% if var('currency') != 'USD' -%}
