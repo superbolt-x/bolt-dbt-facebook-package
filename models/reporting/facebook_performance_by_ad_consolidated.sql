@@ -45,7 +45,7 @@
                     |reject("in",exclude_fields)
                     -%}  
 
-WITH
+WITH  
     {%- if var('currency') != 'USD' -%}
     currency AS
     (SELECT DISTINCT date, "{{ var('currency') }}" as raw_rate, 
