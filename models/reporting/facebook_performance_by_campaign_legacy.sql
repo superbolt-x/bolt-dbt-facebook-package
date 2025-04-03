@@ -1,5 +1,5 @@
 {{ config (
-    alias = target.database + '_facebook_performance_by_campaign'
+    alias = target.database + '_facebook_performance_by_campaign_legacy'
 
 )}}
 
