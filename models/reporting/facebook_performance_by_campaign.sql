@@ -1,5 +1,5 @@
 {{ config (
-    alias = target.database + '_facebook_performance_by_campaign_more_consolidated'
+    alias = target.database + '_facebook_performance_by_campaign'
 )}}
 
 {%- set currency_fields = [
