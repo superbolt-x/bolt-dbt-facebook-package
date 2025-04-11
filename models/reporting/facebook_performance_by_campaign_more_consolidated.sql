@@ -1,6 +1,5 @@
 {{ config (
-    alias = target.database + '_facebook_performance_by_ad'
-
+    alias = target.database + '_facebook_performance_by_campaign_more_consolidated'
 )}}
 
 {%- set currency_fields = [
@@ -15,9 +14,9 @@
     "account_name",
     "account_currency",
     "campaign_name",
-    "adset_name",
-    "ad_name",
     "inline_link_clicks",
+    "offsite_conversion.fb_pixel_add_payment_info",
+    "add_payment_info",
     "offsite_conversion.fb_pixel_view_content",
     "view_content",
     "omni_view_content",
@@ -39,7 +38,7 @@
 ]
 -%}
 
-{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_ads_insights'))
+{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_campaigns_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
                     -%}  
@@ -66,7 +65,7 @@ WITH
         {%- endif -%}
         {%- if not loop.last %},{%- endif %}
         {%- endfor %}
-    FROM {{ ref('_stg_facebook_ads_insights') }}
+    FROM {{ ref('_stg_facebook_campaigns_insights') }}
     {%- if var('currency') != 'USD' %}
     LEFT JOIN currency USING(date)
     {%- endif %}
@@ -76,51 +75,6 @@ WITH
     (SELECT *,
     {{ get_date_parts('date') }}
     FROM insights),
-
-
-{%- set selected_fields = [
-    "id",
-    "name",
-    "effective_status",
-    "account_id",
-    "updated_time"
-] -%}
-{%- set schema_name, table_name = 'facebook_raw', 'ads' -%}
-
-    ads_staging AS 
-    (SELECT
-    
-        {% for field in selected_fields -%}
-        {{ get_facebook_clean_field(table_name, field) }},
-        {% endfor -%}
-        MAX(updated_time) OVER (PARTITION BY id) as last_updated_time
-
-    FROM {{ source(schema_name, table_name) }}
-    ),
-
-{%- set selected_fields = [
-    "id",
-    "name",
-    "billing_event",
-    "bid_strategy",
-    "daily_budget",
-    "effective_status",
-    "optimization_goal",
-    "account_id",
-    "updated_time"
-] -%}
-{%- set schema_name, table_name = 'facebook_raw', 'adsets' -%}
-
-    adsets_staging AS 
-    (SELECT
-    
-        {% for field in selected_fields -%}
-        {{ get_facebook_clean_field(table_name, field) }},
-        {% endfor -%}
-        MAX(updated_time) OVER (PARTITION BY id) as last_updated_time
-
-    FROM {{ source(schema_name, table_name) }}
-    ),
 
 {%- set selected_fields = [
     "id",
@@ -145,7 +99,7 @@ WITH
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
-{%- set dimensions = ['account_id','campaign_id','adset_id','ad_id','attribution_setting'] -%}
+{%- set dimensions = ['account_id','campaign_id','attribution_setting'] -%}
 {% set query %}
     SELECT * FROM insights_stg
     LIMIT 0
@@ -158,6 +112,7 @@ WITH
                     |list
                     -%}
 
+ 
     {%- for date_granularity in date_granularity_list %}
 
     performance_{{date_granularity}} AS 
@@ -175,24 +130,13 @@ WITH
     GROUP BY {{ range(1, dimensions|length +2 +1)|list|join(',') }}),
     {%- endfor %}
 
-    ads AS
-    (SELECT account_id, ad_id::varchar as ad_id, ad_name, ad_effective_status
-    FROM ads_staging 
-    WHERE updated_time = last_updated_time),
-    
-    adsets AS
-    (SELECT account_id, adset_id, adset_name, adset_effective_status
-    FROM adsets_staging 
-    WHERE updated_time = last_updated_time),
-    
     campaigns AS
-    (SELECT account_id, campaign_id, campaign_name, campaign_effective_status
+    (SELECT account_id, campaign_id::varchar as campaign_id, campaign_name, campaign_effective_status
     FROM campaigns_staging 
     WHERE updated_time = last_updated_time)
 
 SELECT *,
-    {{ get_facebook_default_campaign_types('campaign_name')}},
-    {{ get_facebook_scoring_objects() }}
+    {{ get_facebook_default_campaign_types('campaign_name')}}
 FROM 
     ({% for date_granularity in date_granularity_list -%}
     SELECT *
@@ -202,6 +146,4 @@ FROM
 
     {%- endfor %}
     )
-LEFT JOIN ads USING(account_id,ad_id)
-LEFT JOIN adsets USING(account_id,adset_id)
 LEFT JOIN campaigns USING(account_id,campaign_id)
