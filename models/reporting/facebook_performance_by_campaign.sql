@@ -1,5 +1,5 @@
 {{ config (
-    alias = target.database + '_facebook_performance_by_campaign'
+    alias = target.database + '_facebook_performance_by_campaign_more_consolidated'
 )}}
 
 {%- set currency_fields = [
@@ -100,12 +100,18 @@ WITH
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
 {%- set dimensions = ['account_id','campaign_id','attribution_setting'] -%}
-{%- set measures = adapter.get_columns_in_relation(ref('facebook_campaigns_insights'))
+{% set query %}
+    SELECT * FROM insights_stg
+    LIMIT 0
+{% endset %}
+{% set results = run_query(query) %}
+{%- set measures = results.column_names
                     |map(attribute="name")
                     |reject("in",exclude_fields)
                     |reject("in",dimensions)
                     |list
-                    -%}  
+                    -%}
+
  
     {%- for date_granularity in date_granularity_list %}
 
