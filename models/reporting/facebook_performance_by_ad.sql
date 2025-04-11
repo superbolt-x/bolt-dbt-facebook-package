@@ -146,13 +146,18 @@ WITH
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
 {%- set dimensions = ['account_id','campaign_id','adset_id','ad_id','attribution_setting'] -%}
-{%- set measures = get_columns_in_cte(insights_stg)
+{% set query %}
+    SELECT * FROM insights_stg
+    LIMIT 0
+{% endset %}
+{% set results = run_query(query) %}
+{%- set measures = results.column_names
                     |map(attribute="name")
                     |reject("in",exclude_fields)
                     |reject("in",dimensions)
                     |list
-                    -%}  
- 
+                    -%}
+
     {%- for date_granularity in date_granularity_list %}
 
     performance_{{date_granularity}} AS 
