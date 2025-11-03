@@ -117,30 +117,30 @@ insights_stg as (
 -- ===========================================================
 ads as (
     select 
-        {{ get_facebook_clean_field('ads','id') }} as ad_id,
-        {{ get_facebook_clean_field('ads','name') }} as ad_name,
-        {{ get_facebook_clean_field('ads','effective_status') }} as ad_effective_status,
-        {{ get_facebook_clean_field('ads','account_id') }} as account_id,
+        {{ get_facebook_clean_field('ads','id') }},
+        {{ get_facebook_clean_field('ads','name') }},
+        {{ get_facebook_clean_field('ads','effective_status') }},
+        {{ get_facebook_clean_field('ads','account_id') }},
         max(updated_time) over (partition by id) as last_updated_time
     from {{ source('facebook_raw','ads') }}
 ),
 
 adsets as (
     select 
-        {{ get_facebook_clean_field('adsets','id') }} as adset_id,
-        {{ get_facebook_clean_field('adsets','name') }} as adset_name,
-        {{ get_facebook_clean_field('adsets','effective_status') }} as adset_effective_status,
-        {{ get_facebook_clean_field('adsets','account_id') }} as account_id,
+        {{ get_facebook_clean_field('adsets','id') }},
+        {{ get_facebook_clean_field('adsets','name') }},
+        {{ get_facebook_clean_field('adsets','effective_status') }},
+        {{ get_facebook_clean_field('adsets','account_id') }},
         max(updated_time) over (partition by id) as last_updated_time
     from {{ source('facebook_raw','adsets') }}
 ),
 
 campaigns as (
     select 
-        {{ get_facebook_clean_field('campaigns','id') }} as campaign_id,
-        {{ get_facebook_clean_field('campaigns','name') }} as campaign_name,
-        {{ get_facebook_clean_field('campaigns','effective_status') }} as campaign_effective_status,
-        {{ get_facebook_clean_field('campaigns','account_id') }} as account_id,
+        {{ get_facebook_clean_field('campaigns','id') }},
+        {{ get_facebook_clean_field('campaigns','name') }},
+        {{ get_facebook_clean_field('campaigns','effective_status') }},
+        {{ get_facebook_clean_field('campaigns','account_id') }},
         max(updated_time) over (partition by id) as last_updated_time
     from {{ source('facebook_raw','campaigns') }}
 ),
