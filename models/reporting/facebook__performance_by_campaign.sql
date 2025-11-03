@@ -151,7 +151,7 @@ performance_{{date_granularity}} as (
         {% for dim in dimensions %}{{ dim }},{% endfor %}
         {% set measures = adapter.get_columns_in_relation(source('facebook_raw','campaigns_insights'))
             | map(attribute="name")
-            | reject("in", ['date','day','week','month','quarter','year','last_updated','unique_key'])
+            | reject("in", ['date','day','week','month','quarter','year','last_updated','unique_key','_fivetran_id','_fivetran_synced'])
             | reject("in",dimensions)
             | list
         %}
