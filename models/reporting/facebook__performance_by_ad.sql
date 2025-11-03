@@ -184,4 +184,4 @@ select
 from final f
 left join ads using(account_id, ad_id)
 left join adsets using(account_id, adset_id)
-left join campaigns using(account_id, campaign_id);
+left join campaigns using(account_id, campaign_id)
