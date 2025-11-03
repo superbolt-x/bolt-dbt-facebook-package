@@ -48,7 +48,7 @@ actions_source as (
 )
 {% endif %}
 
-raw_insights as (
+,raw_insights as (
     select 
         i.*,
         max(i._fivetran_synced) over (partition by i.account_name) as last_updated,
