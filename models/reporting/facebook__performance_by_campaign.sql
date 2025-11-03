@@ -153,6 +153,7 @@ performance_{{date_granularity}} as (
             | map(attribute="name")
             | reject("in", ['date','day','week','month','quarter','year','last_updated','unique_key','_fivetran_id','_fivetran_synced'])
             | reject("in",dimensions)
+            | reject("in",exclude_fields)
             | list
         %}
         {% for m in measures %}
