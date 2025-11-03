@@ -134,11 +134,11 @@ insights_stg as (
 -- ===========================================================
 campaigns_meta as (
     select
-        {{ get_facebook_clean_field('campaigns','id') }} as campaign_id,
-        {{ get_facebook_clean_field('campaigns','name') }} as campaign_name,
-        {{ get_facebook_clean_field('campaigns','daily_budget') }} as daily_budget,
-        {{ get_facebook_clean_field('campaigns','effective_status') }} as campaign_effective_status,
-        {{ get_facebook_clean_field('campaigns','account_id') }} as account_id,
+        {{ get_facebook_clean_field('campaigns','id') }},
+        {{ get_facebook_clean_field('campaigns','name') }},
+        {{ get_facebook_clean_field('campaigns','daily_budget') }},
+        {{ get_facebook_clean_field('campaigns','effective_status') }},
+        {{ get_facebook_clean_field('campaigns','account_id') }},
         max(updated_time) over (partition by id) as last_updated_time
     from {{ source('facebook_raw','campaigns') }}
 ),
