@@ -178,4 +178,4 @@ select
     f.*,
     {{ get_facebook_default_campaign_types('campaign_name') }}
 from final f
-left join campaigns_meta using(account_id, campaign_id);
+left join campaigns_meta using(account_id, campaign_id)
