@@ -29,7 +29,7 @@ with insights_source as (
 
 actions_source as (
     {{ get_facebook_ads_insights__child_source('actions') }}
-),
+)
 
 -- include other optional sources if they exist
 {% if check_source_exists('facebook_raw','ads_insights_conversions') %}
