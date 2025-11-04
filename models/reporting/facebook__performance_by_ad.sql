@@ -1,11 +1,10 @@
-{{ config(
-    materialized='incremental',
-    unique_key='unique_key',
-    incremental_strategy='merge',
-    on_schema_change='append_new_columns'
-) }}
+{{ config (
+    alias = target.database + '_facebook__performance_by_ad'
+
+)}}
 
 {%- set currency_fields = ["spend", "revenue"] -%}
+
 {%- set exclude_fields = [
     "_fivetran_id","_fivetran_synced","account_name","account_currency",
     "campaign_name","adset_name","ad_name","inline_link_clicks",
@@ -21,174 +20,136 @@
 {%- set dimensions = ['account_id','campaign_id','adset_id','ad_id','attribution_setting'] -%}
 
 -- ===========================================================
--- 1️⃣ RAW STAGE (was stg_ads_insights)
+-- 1️⃣ CLEAN STAGING TABLE
 -- ===========================================================
-with insights_source as (
-    select * from {{ source('facebook_raw','ads_insights') }}
-),
+{%- set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' %}
 
-actions_source as (
-    {{ get_facebook_ads_insights__child_source('actions') }}
-)
-
--- include other optional sources if they exist
-{% if check_source_exists('facebook_raw','ads_insights_conversions') %}
-,conversions_source as (
-    {{ get_facebook_ads_insights__child_source('conversions') }}
-)
-{% endif %}
-{% if check_source_exists('facebook_raw','ads_insights_action_values') %}
-,action_values_source as (
-    {{ get_facebook_ads_insights__child_source('action_values') }}
-)
-{% endif %}
-{% if check_source_exists('facebook_raw','ads_insights_conversion_values') %}
-,conversion_values_source as (
-    {{ get_facebook_ads_insights__child_source('conversion_values') }}
-)
-{% endif %}
-
-,raw_insights as (
-    select 
-        i.*,
-        max(i._fivetran_synced) over (partition by i.account_name) as last_updated,
-        i.ad_id || '_' || i.date as unique_key
-    from insights_source i
-    left join actions_source using(date, ad_id)
-    {% if check_source_exists('facebook_raw','ads_insights_conversions') %}
-        left join conversions_source using(date, ad_id)
-    {% endif %}
-    {% if check_source_exists('facebook_raw','ads_insights_action_values') %}
-        left join action_values_source using(date, ad_id)
-    {% endif %}
-    {% if check_source_exists('facebook_raw','ads_insights_conversion_values') %}
-        left join conversion_values_source using(date, ad_id)
-    {% endif %}
-    {% if is_incremental() %}
-        where i.date >= (select max(date) - 500 from {{ this }})
-    {% endif %}
-),
-
--- ===========================================================
--- 2️⃣ CURRENCY NORMALIZATION (was ads_insights)
--- ===========================================================
-{% if var('currency') != 'USD' %}
-currency as (
-    select distinct
+WITH 
+{% if var('currency') != 'USD' -%}
+currency AS (
+    SELECT DISTINCT
         date,
-        "{{ var('currency') }}" as raw_rate,
-        lag(raw_rate) ignore nulls over (order by date) as exchange_rate
-    from utilities.dates
-    left join utilities.currency using(date)
-    where date <= current_date
+        "{{ var('currency') }}" AS raw_rate,
+        LAG(raw_rate) IGNORE NULLS OVER (ORDER BY date) AS exchange_rate
+    FROM utilities.dates
+    LEFT JOIN utilities.currency USING(date)
+    WHERE date <= current_date
 ),
 {% endif %}
 
-clean_insights as (
-    select
-        {% set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' %}
-        {% set stg_fields = adapter.get_columns_in_relation(source('facebook_raw','ads_insights'))
+insights_stg AS (
+    SELECT
+        {%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_ads_insights'))
             | map(attribute="name")
-            | reject("in",exclude_fields)
-        %}
-        {% for field in stg_fields if (("_1_d_view" not in field and "_7_d_click" not in field) or ("purchases" in field or "revenue" in field)) %}
-            {% if field in currency_fields or '_value' in field %}
-                "{{ field }}"::float/{{ exchange_rate }} as "{{ field }}"
-            {% else %}
+            | reject("in", exclude_fields)
+        -%}
+        {%- for field in stg_fields %}
+            {%- if field in currency_fields or '_value' in field %}
+                "{{ field }}"::float/{{ exchange_rate }} AS "{{ field }}"
+            {%- else %}
                 "{{ field }}"
-            {% endif %}
-            {% if not loop.last %},{% endif %}
-        {% endfor %}
-    from raw_insights
+            {%- endif %}
+            {%- if not loop.last %},{% endif %}
+        {%- endfor %},
+        MAX(_fivetran_synced) OVER (PARTITION BY account_name) AS last_updated,
+        ad_id || '_' || date AS unique_key
+    FROM {{ ref('_stg_facebook_ads_insights') }}
     {% if var('currency') != 'USD' %}
-        left join currency using(date)
+    LEFT JOIN currency USING(date)
     {% endif %}
 ),
 
--- add date parts
-insights_stg as (
-    select *,
-        {{ get_date_parts('date') }}
-    from clean_insights
+-- ===========================================================
+-- 2️⃣ METADATA TABLES
+-- ===========================================================
+ads_staging AS (
+    SELECT
+        {{ get_facebook_clean_field('ads','id') }} AS ad_id,
+        {{ get_facebook_clean_field('ads','name') }} AS ad_name,
+        {{ get_facebook_clean_field('ads','effective_status') }} AS ad_effective_status,
+        {{ get_facebook_clean_field('ads','account_id') }} AS account_id,
+        MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
+    FROM {{ source('facebook_raw','ads') }}
+),
+
+adsets_staging AS (
+    SELECT
+        {{ get_facebook_clean_field('adsets','id') }} AS adset_id,
+        {{ get_facebook_clean_field('adsets','name') }} AS adset_name,
+        {{ get_facebook_clean_field('adsets','effective_status') }} AS adset_effective_status,
+        {{ get_facebook_clean_field('adsets','account_id') }} AS account_id,
+        MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
+    FROM {{ source('facebook_raw','adsets') }}
+),
+
+campaigns_staging AS (
+    SELECT
+        {{ get_facebook_clean_field('campaigns','id') }} AS campaign_id,
+        {{ get_facebook_clean_field('campaigns','name') }} AS campaign_name,
+        {{ get_facebook_clean_field('campaigns','effective_status') }} AS campaign_effective_status,
+        {{ get_facebook_clean_field('campaigns','account_id') }} AS account_id,
+        MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
+    FROM {{ source('facebook_raw','campaigns') }}
 ),
 
 -- ===========================================================
--- 3️⃣ AGGREGATION (was performance_by_ad)
+-- 3️⃣ AGGREGATION BY DATE GRANULARITY
 -- ===========================================================
-ads as (
-    select 
-        {{ get_facebook_clean_field('ads','id') }},
-        {{ get_facebook_clean_field('ads','name') }},
-        {{ get_facebook_clean_field('ads','effective_status') }},
-        {{ get_facebook_clean_field('ads','account_id') }},
-        max(updated_time) over (partition by id) as last_updated_time
-    from {{ source('facebook_raw','ads') }}
-),
+{% set exclude_fields_agg = ['date','day','week','month','quarter','year','last_updated','unique_key'] %}
 
-adsets as (
-    select 
-        {{ get_facebook_clean_field('adsets','id') }},
-        {{ get_facebook_clean_field('adsets','name') }},
-        {{ get_facebook_clean_field('adsets','effective_status') }},
-        {{ get_facebook_clean_field('adsets','account_id') }},
-        max(updated_time) over (partition by id) as last_updated_time
-    from {{ source('facebook_raw','adsets') }}
-),
-
-campaigns as (
-    select 
-        {{ get_facebook_clean_field('campaigns','id') }},
-        {{ get_facebook_clean_field('campaigns','name') }},
-        {{ get_facebook_clean_field('campaigns','effective_status') }},
-        {{ get_facebook_clean_field('campaigns','account_id') }},
-        max(updated_time) over (partition by id) as last_updated_time
-    from {{ source('facebook_raw','campaigns') }}
-),
-
--- rollups for each date granularity
 {% for date_granularity in date_granularity_list %}
-performance_{{date_granularity}} as (
-    select
-        '{{date_granularity}}' as date_granularity,
-        {{date_granularity}} as date,
-        {% for dim in dimensions %}
+performance_{{ date_granularity }} AS (
+    SELECT
+        '{{ date_granularity }}' AS date_granularity,
+        {{ date_granularity }} AS date,
+        {%- for dim in dimensions %}
             {% if dim == 'ad_id' %}
-                cast({{ dim }} as bigint) as {{ dim }},
+                CAST({{ dim }} AS BIGINT) AS {{ dim }},
             {% else %}
                 {{ dim }},
             {% endif %}
-        {% endfor %}
-        {% set measures = adapter.get_columns_in_relation(source('facebook_raw','ads_insights'))
-            | map(attribute="name")
-            | reject("in", ['date','day','week','month','quarter','year','last_updated','unique_key','_fivetran_id','_fivetran_synced'])
-            | reject("in",dimensions)
-            | reject("in",exclude_fields)
-            | list
-        %}
-        {% for m in measures %}
-            coalesce(sum("{{ m }}"),0) as "{{ m }}"
-            {% if not loop.last %},{% endif %}
-        {% endfor %}
-    from insights_stg
-    group by {{ range(1, dimensions|length + 2 + 1)|list|join(',') }}
-),
-{% endfor %}
+        {%- endfor %}
+        {%- for field in stg_fields if field not in exclude_fields_agg and field not in dimensions %}
+            COALESCE(SUM("{{ field }}"),0) AS "{{ field }}"
+            {%- if not loop.last %},{% endif %}
+        {%- endfor %}
+    FROM insights_stg
+    GROUP BY {{ range(1, dimensions|length + 2 + 1)|list|join(',') }}
+)
+{% if not loop.last %},{% endif %}
+{% endfor %},
 
 -- ===========================================================
--- 4️⃣ FINAL OUTPUT
+-- 4️⃣ FINAL OUTPUT WITH METADATA
 -- ===========================================================
-final as (
-    {% for date_granularity in date_granularity_list %}
-        select * from performance_{{date_granularity}}
-        {% if not loop.last %} union all {% endif %}
-    {% endfor %}
+ads AS (
+    SELECT account_id, ad_id::VARCHAR AS ad_id, ad_name, ad_effective_status
+    FROM ads_staging
+    WHERE updated_time = last_updated_time
+),
+
+adsets AS (
+    SELECT account_id, adset_id, adset_name, adset_effective_status
+    FROM adsets_staging
+    WHERE updated_time = last_updated_time
+),
+
+campaigns AS (
+    SELECT account_id, campaign_id, campaign_name, campaign_effective_status
+    FROM campaigns_staging
+    WHERE updated_time = last_updated_time
 )
 
-select 
+SELECT 
     f.*,
     {{ get_facebook_default_campaign_types('campaign_name') }},
     {{ get_facebook_scoring_objects() }}
-from final f
-left join ads using(account_id, ad_id)
-left join adsets using(account_id, adset_id)
-left join campaigns using(account_id, campaign_id)
+FROM (
+    {% for date_granularity in date_granularity_list %}
+    SELECT * FROM performance_{{ date_granularity }}
+    {% if not loop.last %} UNION ALL {% endif %}
+    {% endfor %}
+) f
+LEFT JOIN ads USING(account_id, ad_id)
+LEFT JOIN adsets USING(account_id, adset_id)
+LEFT JOIN campaigns USING(account_id, campaign_id)
