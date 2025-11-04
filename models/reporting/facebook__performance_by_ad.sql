@@ -99,7 +99,7 @@ campaigns_staging AS (
 performance_{{ date_granularity }} AS (
     SELECT
         '{{ date_granularity }}' AS date_granularity,
-        {{ date_granularity }},
+        date_trunc('{{ date_granularity }}',date) AS date,
         {%- for dim in dimensions %}
             {% if dim == 'ad_id' %}
                 CAST({{ dim }} AS BIGINT) AS {{ dim }}
