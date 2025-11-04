@@ -65,6 +65,7 @@ ads_staging AS (
         {{ get_facebook_clean_field('ads','name') }},
         {{ get_facebook_clean_field('ads','effective_status') }},
         {{ get_facebook_clean_field('ads','account_id') }},
+        {{ get_facebook_clean_field('ads','updated_time') }},
         MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
     FROM {{ source('facebook_raw','ads') }}
 ),
@@ -75,6 +76,7 @@ adsets_staging AS (
         {{ get_facebook_clean_field('adsets','name') }},
         {{ get_facebook_clean_field('adsets','effective_status') }},
         {{ get_facebook_clean_field('adsets','account_id') }},
+        {{ get_facebook_clean_field('adsets','updated_time') }},
         MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
     FROM {{ source('facebook_raw','adsets') }}
 ),
@@ -85,6 +87,7 @@ campaigns_staging AS (
         {{ get_facebook_clean_field('campaigns','name') }},
         {{ get_facebook_clean_field('campaigns','effective_status') }},
         {{ get_facebook_clean_field('campaigns','account_id') }},
+        {{ get_facebook_clean_field('campaigns','updated_time') }},
         MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
     FROM {{ source('facebook_raw','campaigns') }}
 ),
