@@ -151,7 +151,13 @@ performance_{{date_granularity}} as (
     select
         '{{date_granularity}}' as date_granularity,
         {{date_granularity}} as date,
-        {% for dim in dimensions %}{{ dim }},{% endfor %}
+        {% for dim in dimensions %}
+            {% if dim == 'ad_id' %}
+                cast({{ dim }} as bigint) as {{ dim }},
+            {% else %}
+                {{ dim }},
+            {% endif %}
+        {% endfor %}
         {% set measures = adapter.get_columns_in_relation(source('facebook_raw','ads_insights'))
             | map(attribute="name")
             | reject("in", ['date','day','week','month','quarter','year','last_updated','unique_key','_fivetran_id','_fivetran_synced'])
