@@ -1,10 +1,8 @@
 {{ config (
     alias = target.database + '_facebook__performance_by_ad'
-
-)}}
+) }}
 
 {%- set currency_fields = ["spend", "revenue"] -%}
-
 {%- set exclude_fields = [
     "_fivetran_id","_fivetran_synced","account_name","account_currency",
     "campaign_name","adset_name","ad_name","inline_link_clicks",
@@ -15,7 +13,6 @@
     "web_initiate_checkout","omni_initiated_checkout_value","omni_purchase",
     "web_purchases","omni_purchase_value"
 ] -%}
-
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set dimensions = ['account_id','campaign_id','adset_id','ad_id','attribution_setting'] -%}
 
@@ -96,6 +93,7 @@ campaigns_staging AS (
 -- 3️⃣ AGGREGATION BY DATE GRANULARITY
 -- ===========================================================
 {% set exclude_fields_agg = ['date','day','week','month','quarter','year','last_updated','unique_key'] %}
+{% set measures = stg_fields | reject("in", exclude_fields_agg + dimensions) | list %}
 
 {% for date_granularity in date_granularity_list %}
 performance_{{ date_granularity }} AS (
@@ -104,12 +102,13 @@ performance_{{ date_granularity }} AS (
         {{ date_granularity }} AS date,
         {%- for dim in dimensions %}
             {% if dim == 'ad_id' %}
-                CAST({{ dim }} AS BIGINT) AS {{ dim }},
+                CAST({{ dim }} AS BIGINT) AS {{ dim }}
             {% else %}
-                {{ dim }},
+                {{ dim }}
             {% endif %}
+            {%- if not loop.last or measures | length > 0 %},{% endif %}
         {%- endfor %}
-        {%- for field in stg_fields if field not in exclude_fields_agg and field not in dimensions %}
+        {%- for field in measures %}
             COALESCE(SUM("{{ field }}"),0) AS "{{ field }}"
             {%- if not loop.last %},{% endif %}
         {%- endfor %}
