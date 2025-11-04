@@ -64,30 +64,30 @@ insights_stg AS (
 -- ===========================================================
 ads_staging AS (
     SELECT
-        {{ get_facebook_clean_field('ads','id') }} AS ad_id,
-        {{ get_facebook_clean_field('ads','name') }} AS ad_name,
-        {{ get_facebook_clean_field('ads','effective_status') }} AS ad_effective_status,
-        {{ get_facebook_clean_field('ads','account_id') }} AS account_id,
+        {{ get_facebook_clean_field('ads','id') }},
+        {{ get_facebook_clean_field('ads','name') }},
+        {{ get_facebook_clean_field('ads','effective_status') }},
+        {{ get_facebook_clean_field('ads','account_id') }},
         MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
     FROM {{ source('facebook_raw','ads') }}
 ),
 
 adsets_staging AS (
     SELECT
-        {{ get_facebook_clean_field('adsets','id') }} AS adset_id,
-        {{ get_facebook_clean_field('adsets','name') }} AS adset_name,
-        {{ get_facebook_clean_field('adsets','effective_status') }} AS adset_effective_status,
-        {{ get_facebook_clean_field('adsets','account_id') }} AS account_id,
+        {{ get_facebook_clean_field('adsets','id') }},
+        {{ get_facebook_clean_field('adsets','name') }},
+        {{ get_facebook_clean_field('adsets','effective_status') }},
+        {{ get_facebook_clean_field('adsets','account_id') }},
         MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
     FROM {{ source('facebook_raw','adsets') }}
 ),
 
 campaigns_staging AS (
     SELECT
-        {{ get_facebook_clean_field('campaigns','id') }} AS campaign_id,
-        {{ get_facebook_clean_field('campaigns','name') }} AS campaign_name,
-        {{ get_facebook_clean_field('campaigns','effective_status') }} AS campaign_effective_status,
-        {{ get_facebook_clean_field('campaigns','account_id') }} AS account_id,
+        {{ get_facebook_clean_field('campaigns','id') }},
+        {{ get_facebook_clean_field('campaigns','name') }},
+        {{ get_facebook_clean_field('campaigns','effective_status') }},
+        {{ get_facebook_clean_field('campaigns','account_id') }},
         MAX(updated_time) OVER (PARTITION BY id) AS last_updated_time
     FROM {{ source('facebook_raw','campaigns') }}
 ),
@@ -123,7 +123,7 @@ performance_{{ date_granularity }} AS (
 -- 4️⃣ FINAL OUTPUT WITH METADATA
 -- ===========================================================
 ads AS (
-    SELECT account_id, ad_id::VARCHAR AS ad_id, ad_name, ad_effective_status
+    SELECT account_id, ad_id, ad_name, ad_effective_status
     FROM ads_staging
     WHERE updated_time = last_updated_time
 ),
