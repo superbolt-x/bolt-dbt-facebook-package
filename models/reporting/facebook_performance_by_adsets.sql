@@ -161,7 +161,6 @@ WITH
 
 SELECT *,
     {{ get_facebook_default_campaign_types('campaign_name')}},
-    {{ get_facebook_scoring_objects() }}
 FROM 
     ({% for date_granularity in date_granularity_list -%}
     SELECT *
