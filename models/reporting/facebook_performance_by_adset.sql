@@ -150,7 +150,7 @@ WITH
     {%- endfor %}
     
     adsets AS
-    (SELECT account_id, adset_id, adset_name, adset_effective_status
+    (SELECT account_id, adset_id::varchar as adset_id, adset_name, adset_effective_status
     FROM adsets_staging 
     WHERE updated_time = last_updated_time),
     
