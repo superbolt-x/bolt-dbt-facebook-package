@@ -124,7 +124,7 @@ WITH
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
-{%- set dimensions = ['account_id','campaign_id','adset_id','attribution_setting'] -%}
+{%- set dimensions = ['account_id','campaign_id','adset_id'] -%}
 {%- set measures = adapter.get_columns_in_relation(ref('facebook_adset_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
