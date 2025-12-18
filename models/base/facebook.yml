@@ -92,6 +92,20 @@ sources:
         identifier: campaigns_insights_catalog_segment_actions
       - name: campaigns_insights_catalog_segment_value
         identifier: campaigns_insights_catalog_segment_value
+      - name: adset_insights
+        identifier: adset_insights
+      - name: adset_insights_actions
+        identifier: adset_insights_actions
+      - name: adset_insights_action_values
+        identifier: adset_insights_action_values
+      - name: adset_insights_conversions
+        identifier: adset_insights_conversions
+      - name: adset_insights_conversion_values
+        identifier: adset_insights_conversion_values
+      - name: adset_insights_catalog_segment_actions
+        identifier: adset_insights_catalog_segment_actions
+      - name: adset_insights_catalog_segment_value
+        identifier: adset_insights_catalog_segment_value
 
 models:
   - name: facebook_ads
