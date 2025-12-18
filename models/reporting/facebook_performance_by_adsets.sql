@@ -1,5 +1,5 @@
 {{ config (
-    alias = target.database + '_facebook_performance_by_adset'
+    alias = target.database + '_facebook_performance_by_adsets'
 
 )}}
 
@@ -38,7 +38,7 @@
 ]
 -%}
 
-{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_adset_insights'))
+{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_adsets_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
                     -%}  
@@ -65,7 +65,7 @@ WITH
         {%- endif -%}
         {%- if not loop.last %},{%- endif %}
         {%- endfor %}
-    FROM {{ ref('_stg_facebook_adset_insights') }}
+    FROM {{ ref('_stg_facebook_adsets_insights') }}
     {%- if var('currency') != 'USD' %}
     LEFT JOIN currency USING(date)
     {%- endif %}
@@ -125,7 +125,7 @@ WITH
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
 {%- set dimensions = ['account_id','campaign_id','adset_id'] -%}
-{%- set measures = adapter.get_columns_in_relation(ref('facebook_adset_insights'))
+{%- set measures = adapter.get_columns_in_relation(ref('facebook_adsets_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
                     |reject("in",dimensions)
