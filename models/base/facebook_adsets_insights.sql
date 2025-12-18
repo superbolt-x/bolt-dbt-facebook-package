@@ -33,7 +33,7 @@
 ]
 -%}
 
-{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_adset_insights'))
+{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_adsets_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
                     -%}  
@@ -60,7 +60,7 @@ WITH
         {%- endif -%}
         {%- if not loop.last %},{%- endif %}
         {%- endfor %}
-    FROM {{ ref('_stg_facebook_adset_insights') }}
+    FROM {{ ref('_stg_facebook_adsets_insights') }}
     {%- if var('currency') != 'USD' %}
     LEFT JOIN currency USING(date)
     {%- endif %}
