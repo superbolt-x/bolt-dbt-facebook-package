@@ -5,184 +5,99 @@
     on_schema_change='append_new_columns'
 ) }}
 
-{%- set currency_fields = ["spend", "revenue"] -%}
-{%- set exclude_fields = [
-    "_fivetran_id","_fivetran_synced","account_name","account_currency",
-    "campaign_name","inline_link_clicks","offsite_conversion.fb_pixel_add_payment_info",
-    "add_payment_info","offsite_conversion.fb_pixel_view_content","view_content",
-    "omni_view_content","offsite_conversion.fb_pixel_view_content_value","omni_view_content_value",
-    "lead","leadgen_grouped","omni_add_to_cart","web_add_to_cart","add_to_cart_value",
-    "omni_add_to_cart_value","web_add_to_cart_value","omni_initiated_checkout",
-    "web_initiate_checkout","omni_initiated_checkout_value","omni_purchase",
-    "web_purchases","omni_purchase_value"
-] -%}
-{%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
-{%- set dimensions = ['account_id','campaign_id','attribution_setting'] -%}
-
 -- ===========================================================
--- 1️⃣ RAW STAGE (was stg_campaigns_insights)
+-- 1️⃣ SOURCES
 -- ===========================================================
-with insights_source as (
-    select * from {{ source('facebook_raw','campaigns_insights') }}
-),
 
-actions_source as (
-    {{ get_facebook_campaigns_insights__child_source('actions') }}
-)
-
-{% if check_source_exists('facebook_raw','campaigns_insights_conversions') %}
-,conversions_source as (
-    {{ get_facebook_campaigns_insights__child_source('conversions') }}
-)
-{% endif %}
-
-{% if check_source_exists('facebook_raw','campaigns_insights_action_values') %}
-,action_values_source as (
-    {{ get_facebook_campaigns_insights__child_source('action_values') }}
-)
-{% endif %}
-
-{% if check_source_exists('facebook_raw','campaigns_insights_conversion_values') %}
-,conversion_values_source as (
-    {{ get_facebook_campaigns_insights__child_source('conversion_values') }}
-)
-{% endif %}
-
-{% if check_source_exists('facebook_raw','campaigns_insights_catalog_segment_actions') %}
-,segment_actions_source as (
-    {{ get_facebook_campaigns_insights__segment_source('catalog_segment_actions') }}
-)
-{% endif %}
-
-{% if check_source_exists('facebook_raw','campaigns_insights_catalog_segment_value') %}
-,segment_value_source as (
-    {{ get_facebook_campaigns_insights__segment_source('catalog_segment_value') }}
-)
-{% endif %}
-
-,raw_insights as (
+with insights as (
     select 
-        i.*,
-        max(i._fivetran_synced) over (partition by i.account_name) as last_updated,
-        i.campaign_id || '_' || i.date as unique_key
-    from insights_source i
-    left join actions_source using(date, campaign_id)
-    {% if check_source_exists('facebook_raw','campaigns_insights_conversions') %}
-        left join conversions_source using(date, campaign_id)
-    {% endif %}
-    {% if check_source_exists('facebook_raw','campaigns_insights_action_values') %}
-        left join action_values_source using(date, campaign_id)
-    {% endif %}
-    {% if check_source_exists('facebook_raw','campaigns_insights_conversion_values') %}
-        left join conversion_values_source using(date, campaign_id)
-    {% endif %}
-    {% if check_source_exists('facebook_raw','campaigns_insights_catalog_segment_actions') %}
-        left join segment_actions_source using(date, campaign_id)
-    {% endif %}
-    {% if check_source_exists('facebook_raw','campaigns_insights_catalog_segment_value') %}
-        left join segment_value_source using(date, campaign_id)
-    {% endif %}
-    {% if is_incremental() %}
-        where i.date >= (select max(date) - 7 from {{ this }})
-    {% endif %}
-),
-
--- ===========================================================
--- 2️⃣ CURRENCY NORMALIZATION (was campaigns_insights)
--- ===========================================================
-{% if var('currency') != 'USD' %}
-currency as (
-    select distinct
         date,
-        "{{ var('currency') }}" as raw_rate,
-        lag(raw_rate) ignore nulls over (order by date) as exchange_rate
-    from utilities.dates
-    left join utilities.currency using(date)
-    where date <= current_date
-),
-{% endif %}
-
-clean_insights as (
-    select
-        {% set exchange_rate = 1 if var('currency') == 'USD' else 'exchange_rate' %}
-        {% set stg_fields = adapter.get_columns_in_relation(source('facebook_raw','campaigns_insights'))
-            | map(attribute="name")
-            | reject("in",exclude_fields)
-        %}
-        {% for field in stg_fields if (("_1_d_view" not in field and "_7_d_click" not in field) or ("purchases" in field or "revenue" in field)) %}
-            {% if field in currency_fields or '_value' in field %}
-                "{{ field }}"::float/{{ exchange_rate }} as "{{ field }}"
-            {% else %}
-                "{{ field }}"
-            {% endif %}
-            {% if not loop.last %},{% endif %}
-        {% endfor %}
-    from raw_insights
-    {% if var('currency') != 'USD' %}
-        left join currency using(date)
+        campaign_id,
+        account_id,
+        attribution_setting,
+        sum(spend) as spend,
+        sum(impressions) as impressions,
+        sum(clicks) as clicks
+    from {{ source('facebook_raw','campaigns_insights') }}
+    {% if is_incremental() %}
+        where date >= (select max(date) - 7 from {{ this }})
     {% endif %}
+    group by 1,2,3,4
 ),
 
-insights_stg as (
-    select *,
-        {{ get_date_parts('date') }}
-    from clean_insights
+actions as (
+    select 
+        date,
+        campaign_id,
+        sum(purchases) as purchases,
+        sum(add_to_cart) as add_to_cart
+    from {{ get_facebook_campaigns_insights__child_source('actions') }}
+    group by 1,2
+),
+
+conversion_values as (
+    select 
+        date,
+        campaign_id,
+        sum(purchase_value) as revenue
+    from {{ get_facebook_campaigns_insights__child_source('conversion_values') }}
+    group by 1,2
 ),
 
 -- ===========================================================
--- 3️⃣ AGGREGATION (was performance_by_campaign)
+-- 2️⃣ JOIN SAFE (1:1)
 -- ===========================================================
+
+joined as (
+    select 
+        i.date,
+        i.campaign_id,
+        i.account_id,
+        i.attribution_setting,
+
+        i.spend,
+        i.impressions,
+        i.clicks,
+
+        coalesce(a.purchases, 0) as purchases,
+        coalesce(a.add_to_cart, 0) as add_to_cart,
+        coalesce(cv.revenue, 0) as revenue,
+
+        i.campaign_id || '_' || i.date as unique_key
+
+    from insights i
+    left join actions a 
+        on i.campaign_id = a.campaign_id
+        and i.date = a.date
+
+    left join conversion_values cv 
+        on i.campaign_id = cv.campaign_id
+        and i.date = cv.date
+),
+
+-- ===========================================================
+-- 3️⃣ METADATA
+-- ===========================================================
+
 campaigns_meta as (
     select
-        {{ get_facebook_clean_field('campaigns','id') }},
-        {{ get_facebook_clean_field('campaigns','name') }},
-        {{ get_facebook_clean_field('campaigns','daily_budget') }},
-        {{ get_facebook_clean_field('campaigns','effective_status') }},
-        {{ get_facebook_clean_field('campaigns','account_id') }},
-        max(updated_time) over (partition by id) as last_updated_time
+        id as campaign_id,
+        name as campaign_name,
+        account_id,
+        max(updated_time) as last_updated_time
     from {{ source('facebook_raw','campaigns') }}
-),
-
-{% for date_granularity in date_granularity_list %}
-performance_{{date_granularity}} as (
-    select
-        '{{date_granularity}}' as date_granularity,
-        {{date_granularity}} as date,
-        {% for dim in dimensions %}
-            {% if dim == 'campaign_id' %}
-                cast({{ dim }} as bigint) as {{ dim }},
-            {% else %}
-                {{ dim }},
-            {% endif %}
-        {% endfor %}
-        {% set measures = adapter.get_columns_in_relation(source('facebook_raw','campaigns_insights'))
-            | map(attribute="name")
-            | reject("in", ['date','day','week','month','quarter','year','last_updated','unique_key','_fivetran_id','_fivetran_synced'])
-            | reject("in",dimensions)
-            | reject("in",exclude_fields)
-            | list
-        %}
-        {% for m in measures %}
-            coalesce(sum("{{ m }}"),0) as "{{ m }}"
-            {% if not loop.last %},{% endif %}
-        {% endfor %}
-    from insights_stg
-    group by {{ range(1, dimensions|length + 2 + 1)|list|join(',') }}
-),
-{% endfor %}
-
--- ===========================================================
--- 4️⃣ FINAL OUTPUT
--- ===========================================================
-final as (
-    {% for date_granularity in date_granularity_list %}
-        select * from performance_{{date_granularity}}
-        {% if not loop.last %} union all {% endif %}
-    {% endfor %}
+    group by 1,2,3
 )
 
+-- ===========================================================
+-- 4️⃣ FINAL
+-- ===========================================================
+
 select
-    f.*,
-    {{ get_facebook_default_campaign_types('campaign_name') }}
-from final f
-left join campaigns_meta using(account_id, campaign_id)
+    j.*,
+    m.campaign_name
+
+from joined j
+left join campaigns_meta m 
+    on j.campaign_id = m.campaign_id
+    and j.account_id = m.account_id
