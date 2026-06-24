@@ -103,14 +103,6 @@ LEFT JOIN segment_actions_source USING(date, adset_id)
 {%- else %}
 LEFT JOIN segment_value_source USING(date, adset_id)
 {%- endif %}
-{%- if not gsheet_segment_actions_table_exists %}
-{%- else %}
-LEFT JOIN gsheet_segment_actions_source USING(date, adset_id)
-{%- endif %}
-{%- if not gsheet_segment_value_table_exists %}
-{%- else %}
-LEFT JOIN gsheet_segment_value_source USING(date, adset_id)
-{%- endif %}
 
 {% if is_incremental() -%}
 
