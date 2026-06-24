@@ -42,7 +42,8 @@
 {%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_ads_insights'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
-                    -%}  
+                    |list
+                    -%}
 
 WITH 
     {% if var('currency') != 'USD' -%}
@@ -146,12 +147,13 @@ WITH
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
 {%- set dimensions = ['account_id','campaign_id','adset_id','ad_id','attribution_setting'] -%}
-{%- set measures = adapter.get_columns_in_relation(ref('facebook_ads_insights'))
-                    |map(attribute="name")
-                    |reject("in",exclude_fields)
-                    |reject("in",dimensions)
-                    |list
-                    -%}  
+{#- Derive the measure list directly from the staging model, reproducing the
+    same exclude + attribution filtering that the insights_stg CTE applies above.
+    This removes the dependency on the redundant facebook_ads_insights table. -#}
+{%- set measures = [] -%}
+    {%- for field in stg_fields if (("_1_d_view" not in field and "_7_d_click" not in field) or ("purchases" in field or "revenue" in field)) and field not in dimensions and field not in exclude_fields -%}
+    {%- do measures.append(field) -%}
+    {%- endfor -%}
  
     {%- for date_granularity in date_granularity_list %}
 

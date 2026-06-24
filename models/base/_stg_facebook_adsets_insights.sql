@@ -115,6 +115,7 @@ LEFT JOIN gsheet_segment_value_source USING(date, adset_id)
 {% if is_incremental() -%}
 
   -- this filter will only be applied on an incremental run
-where date >= (select max(date)-500 from {{ this }})
+  -- 9-day lookback covers the 7-day-click (+1-day-view) attribution window with a safety buffer
+where date >= (select max(date)-9 from {{ this }})
 
 {% endif %}
