@@ -155,10 +155,25 @@ WITH
     {%- do measures.append(field) -%}
     {%- endfor -%}
  
+    {#- Aggregate to the day grain ONCE; the coarser grains below roll up from
+        this small CTE instead of re-scanning insights_stg five times. -#}
+    performance_day_base AS
+    (SELECT
+        day, week, month, quarter, year,
+        {%- for dimension in dimensions %}
+        {{ dimension }},
+        {%-  endfor %}
+        {% for measure in measures -%}
+        COALESCE(SUM("{{ measure }}"),0) as "{{ measure }}"
+        {%- if not loop.last %},{%- endif %}
+        {% endfor %}
+    FROM insights_stg
+    GROUP BY {{ range(1, dimensions|length + 5 + 1)|list|join(',') }}),
+
     {%- for date_granularity in date_granularity_list %}
 
-    performance_{{date_granularity}} AS 
-    (SELECT 
+    performance_{{date_granularity}} AS
+    (SELECT
         '{{date_granularity}}' as date_granularity,
         {{date_granularity}} as date,
         {%- for dimension in dimensions %}
@@ -168,7 +183,7 @@ WITH
         COALESCE(SUM("{{ measure }}"),0) as "{{ measure }}"
         {%- if not loop.last %},{%- endif %}
         {% endfor %}
-    FROM insights_stg
+    FROM performance_day_base
     GROUP BY {{ range(1, dimensions|length +2 +1)|list|join(',') }}),
     {%- endfor %}
 
