@@ -1,14 +1,26 @@
-{{ config( 
+{{ config(
         materialized='incremental',
         unique_key='unique_key',
         on_schema_change='append_new_columns'
 ) }}
 
+{#-
+    Day-grain staging for the ad performance pipeline.
+
+    This does the same unpacking work as _stg_facebook_ads_insights (joining the
+    Fivetran action/conversion child tables into one row per ad x date), but is a
+    dedicated model for facebook_performance_by_ad so that model can read an
+    incremental day-grain table and roll the coarser grains up from it.
+
+    The unpacked result is already at ad x date grain (Fivetran ads_insights is
+    daily per ad), so no aggregation happens here. Incremental, 9-day lookback.
+-#}
+
 {%- set schema_name, table_name = 'facebook_raw', 'ads_insights' -%}
 
 with insights_source as (
 
-    SELECT * 
+    SELECT *
     FROM {{ source(schema_name, table_name) }}
 
     ),
@@ -18,7 +30,7 @@ with insights_source as (
     {{ get_facebook_ads_insights__child_source('actions') }}
 
     )
-    
+
     {%- set conversions_table_exists = check_source_exists('facebook_raw','ads_insights_conversions') %}
     {%- if not conversions_table_exists %}
 
@@ -29,7 +41,7 @@ with insights_source as (
 
     )
     {%- endif %}
-    
+
     {%- set action_values_table_exists = check_source_exists('facebook_raw','ads_insights_action_values') %}
     {%- if not action_values_table_exists %}
 
@@ -52,7 +64,7 @@ with insights_source as (
     )
     {%- endif %}
 
-        
+
     {%- set segment_actions_table_exists = check_source_exists('facebook_raw','ads_insights_catalog_segment_actions') %}
     {%- if not segment_actions_table_exists %}
 
@@ -64,7 +76,7 @@ with insights_source as (
     )
     {%- endif %}
 
-        
+
     {%- set segment_value_table_exists = check_source_exists('facebook_raw','ads_insights_catalog_segment_value') %}
     {%- if not segment_value_table_exists %}
 
@@ -75,13 +87,13 @@ with insights_source as (
 
     )
     {%- endif %}
-        
-SELECT 
+
+SELECT
     *,
     MAX(_fivetran_synced) over (PARTITION BY account_name) as last_updated,
     ad_id||'_'||date as unique_key
 
-FROM insights_source 
+FROM insights_source
 LEFT JOIN actions_source USING(date, ad_id)
 {%- if not conversions_table_exists %}
 {%- else %}
@@ -111,4 +123,3 @@ LEFT JOIN segment_value_source USING(date, ad_id)
 where date >= (select max(date)-9 from {{ this }})
 
 {% endif %}
-

@@ -1,15 +1,26 @@
-
-{{ config( 
+{{ config(
         materialized='incremental',
         unique_key='unique_key',
         on_schema_change='append_new_columns'
 ) }}
 
+{#-
+    Day-grain staging for the adset performance pipeline.
+
+    Same unpacking work as _stg_facebook_adsets_insights (joining the Fivetran
+    action/conversion child tables into one row per adset x date), but a
+    dedicated model so facebook_performance_by_adsets can read an incremental
+    day-grain table and roll the coarser grains up from it.
+
+    The unpacked result is already at adset x date grain, so no aggregation
+    happens here. Incremental, 9-day lookback.
+-#}
+
 {%- set schema_name, table_name = 'facebook_raw', 'adset_insights' -%}
 
 with insights_source as (
 
-    SELECT * 
+    SELECT *
     FROM {{ source(schema_name, table_name) }}
 
     ),
@@ -19,7 +30,7 @@ with insights_source as (
     {{ get_facebook_adset_insights__child_source('actions') }}
 
     )
-    
+
     {%- set conversions_table_exists = check_source_exists('facebook_raw','adset_insights_conversions') %}
     {%- if not conversions_table_exists %}
 
@@ -30,7 +41,7 @@ with insights_source as (
 
     )
     {%- endif %}
-    
+
     {%- set action_values_table_exists = check_source_exists('facebook_raw','adset_insights_action_values') %}
     {%- if not action_values_table_exists %}
 
@@ -64,7 +75,7 @@ with insights_source as (
     )
     {%- endif %}
 
-        
+
     {%- set segment_value_table_exists = check_source_exists('facebook_raw','adset_insights_catalog_segment_value') %}
     {%- if not segment_value_table_exists %}
 
@@ -75,13 +86,13 @@ with insights_source as (
 
     )
     {%- endif %}
-        
-SELECT 
+
+SELECT
     *,
     MAX(_fivetran_synced) over (PARTITION BY account_name) as last_updated,
     adset_id||'_'||date as unique_key
 
-FROM insights_source 
+FROM insights_source
 LEFT JOIN actions_source USING(date, adset_id)
 {%- if not conversions_table_exists %}
 {%- else %}

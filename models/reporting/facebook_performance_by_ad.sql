@@ -1,6 +1,9 @@
 {{ config (
-    alias = target.database + '_facebook_performance_by_ad'
-
+    alias = target.database + '_facebook_performance_by_ad',
+    materialized = 'incremental',
+    unique_key = 'unique_key',
+    incremental_strategy = 'delete+insert',
+    on_schema_change = 'append_new_columns'
 )}}
 
 {%- set currency_fields = [
@@ -39,10 +42,11 @@
 ]
 -%}
 
-{%- set stg_fields = adapter.get_columns_in_relation(ref('_stg_facebook_ads_insights'))
+{%- set stg_fields = adapter.get_columns_in_relation(ref('facebook_performance_by_ad_daily'))
                     |map(attribute="name")
                     |reject("in",exclude_fields)
-                    -%}  
+                    |list
+                    -%}
 
 WITH 
     {% if var('currency') != 'USD' -%}
@@ -66,13 +70,20 @@ WITH
         {%- endif -%}
         {%- if not loop.last %},{%- endif %}
         {%- endfor %}
-    FROM {{ ref('_stg_facebook_ads_insights') }}
+    FROM {{ ref('facebook_performance_by_ad_daily') }}
     {%- if var('currency') != 'USD' %}
     LEFT JOIN currency USING(date)
     {%- endif %}
+    {% if is_incremental() -%}
+    -- Incremental: reprocess from the start of the year containing (max date - 9d).
+    -- Reading whole periods keeps the week/month/quarter/year roll-ups complete;
+    -- data older than the 9-day attribution window does not change. Run with
+    -- --full-refresh periodically to refresh ad-object names on historical rows.
+    WHERE date >= date_trunc('year', (select dateadd(day,-9,max(date)) from {{ ref('facebook_performance_by_ad_daily') }}))::date
+    {%- endif %}
     ),
 
-    insights_stg AS 
+    insights_stg AS
     (SELECT *,
     {{ get_date_parts('date') }}
     FROM insights),
@@ -146,12 +157,13 @@ WITH
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 {%- set exclude_fields = ['date','day','week','month','quarter','year','last_updated','unique_key'] -%}
 {%- set dimensions = ['account_id','campaign_id','adset_id','ad_id','attribution_setting'] -%}
-{%- set measures = adapter.get_columns_in_relation(ref('facebook_ads_insights'))
-                    |map(attribute="name")
-                    |reject("in",exclude_fields)
-                    |reject("in",dimensions)
-                    |list
-                    -%}  
+{#- Derive the measure list directly from the staging model, reproducing the
+    same exclude + attribution filtering that the insights_stg CTE applies above.
+    This removes the dependency on the redundant facebook_ads_insights table. -#}
+{%- set measures = [] -%}
+    {%- for field in stg_fields if (("_1_d_view" not in field and "_7_d_click" not in field) or ("purchases" in field or "revenue" in field)) and field not in dimensions and field not in exclude_fields -%}
+    {%- do measures.append(field) -%}
+    {%- endfor -%}
  
     {%- for date_granularity in date_granularity_list %}
 
@@ -187,8 +199,17 @@ WITH
 
 SELECT *,
     {{ get_facebook_default_campaign_types('campaign_name')}},
-    {{ get_facebook_scoring_objects() }}
-FROM 
+    {{ get_facebook_scoring_objects() }},
+    md5(
+        coalesce(date_granularity,'')||'|'||
+        coalesce(date::varchar,'')||'|'||
+        coalesce(account_id::varchar,'')||'|'||
+        coalesce(campaign_id::varchar,'')||'|'||
+        coalesce(adset_id::varchar,'')||'|'||
+        coalesce(ad_id::varchar,'')||'|'||
+        coalesce(attribution_setting::varchar,'')
+    ) as unique_key
+FROM
     ({% for date_granularity in date_granularity_list -%}
     SELECT *
     FROM performance_{{date_granularity}}
