@@ -3,7 +3,9 @@
 
 
 {%- set action_types = dbt_utils.get_column_values(source('facebook_raw','adset_insights_'~table_name),'action_type') -%}
-{%- set attributions = ['_1_d_view','_7_d_click'] -%}
+{#- only keep attribution columns Fivetran actually created for this table: the *_values children have no _1_d_view when no view-attributed value ever landed -#}
+{%- set available_columns = adapter.get_columns_in_relation(source('facebook_raw','adset_insights_'~table_name)) | map(attribute='name') | map('lower') | list -%}
+{%- set attributions = ['_1_d_view','_7_d_click'] | select('in', available_columns) | list -%}
 
 SELECT 
     date,
