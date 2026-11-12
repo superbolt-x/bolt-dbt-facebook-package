@@ -22,6 +22,11 @@ with insights_source as (
 
     SELECT *
     FROM {{ source(schema_name, table_name) }}
+    {% if is_incremental() -%}
+    -- this filter will only be applied on an incremental run
+    -- 9-day lookback covers the 7-day-click (+1-day-view) attribution window with a safety buffer
+    WHERE date >= (select max(date)-9 from {{ this }})
+    {%- endif %}
 
     ),
 
@@ -88,38 +93,50 @@ with insights_source as (
     )
     {%- endif %}
 
+-- last_updated is a per-account aggregate joined back instead of MAX() OVER (PARTITION BY account_name): the
+-- window sent every row of an account to one slice and spilled to disk, and the table inherited KEY(account_name)
+-- (skew 100 with one account). insights_source carries the incremental filter, so the aggregate covers the same
+-- rows the window did.
+,last_updated_source as (
+
+    SELECT account_name, MAX(_fivetran_synced) as last_updated
+    FROM insights_source
+    GROUP BY 1
+
+    ),
+
+    insights as (
+
+    SELECT *
+    FROM insights_source
+    LEFT JOIN actions_source USING(date, ad_id)
+    {%- if not conversions_table_exists %}
+    {%- else %}
+    LEFT JOIN conversions_source USING(date, ad_id)
+    {%- endif %}
+    {%- if not action_values_table_exists %}
+    {%- else %}
+    LEFT JOIN action_values_source USING(date, ad_id)
+    {%- endif %}
+    {%- if not conversion_values_table_exists %}
+    {%- else %}
+    LEFT JOIN conversion_values_source USING(date, ad_id)
+    {%- endif %}
+    {%- if not segment_actions_table_exists %}
+    {%- else %}
+    LEFT JOIN segment_actions_source USING(date, ad_id)
+    {%- endif %}
+    {%- if not segment_value_table_exists %}
+    {%- else %}
+    LEFT JOIN segment_value_source USING(date, ad_id)
+    {%- endif %}
+
+    )
+
 SELECT
-    *,
-    MAX(_fivetran_synced) over (PARTITION BY account_name) as last_updated,
-    ad_id||'_'||date as unique_key
+    insights.*,
+    last_updated_source.last_updated,
+    insights.ad_id||'_'||insights.date as unique_key
 
-FROM insights_source
-LEFT JOIN actions_source USING(date, ad_id)
-{%- if not conversions_table_exists %}
-{%- else %}
-LEFT JOIN conversions_source USING(date, ad_id)
-{%- endif %}
-{%- if not action_values_table_exists %}
-{%- else %}
-LEFT JOIN action_values_source USING(date, ad_id)
-{%- endif %}
-{%- if not conversion_values_table_exists %}
-{%- else %}
-LEFT JOIN conversion_values_source USING(date, ad_id)
-{%- endif %}
-{%- if not segment_actions_table_exists %}
-{%- else %}
-LEFT JOIN segment_actions_source USING(date, ad_id)
-{%- endif %}
-{%- if not segment_value_table_exists %}
-{%- else %}
-LEFT JOIN segment_value_source USING(date, ad_id)
-{%- endif %}
-
-{% if is_incremental() -%}
-
-  -- this filter will only be applied on an incremental run
-  -- 9-day lookback covers the 7-day-click (+1-day-view) attribution window with a safety buffer
-where date >= (select max(date)-9 from {{ this }})
-
-{% endif %}
+FROM insights
+LEFT JOIN last_updated_source ON insights.account_name = last_updated_source.account_name
